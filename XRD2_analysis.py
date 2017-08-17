@@ -76,13 +76,13 @@ peakfile = os.path.join(os.path.dirname(__file__), 'BNKT_peaks.csv')
 print(len(data_list))
 
 for i, data in enumerate(data_list):
-    """ Plot heat maps
+    #""" Plot heat maps
     #data.plot_heatmap(name)
     mini=data.smap.min()
-    maxi=data.smap.max()*.2
+    maxi=data.smap.max()*.1
     data.plot_heatmap(os.path.basename(file_list[i])[:19], maxi=maxi,
                         plotpeaks=peakfile)
-    """
+    #""
 
     """ Do fits of all Automagically and save in CSV
     # fit all 2th lines
