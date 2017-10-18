@@ -90,7 +90,7 @@ def get_fit(x, y, plot=False):
     ret['amp'] = 0 if ret['sig'] > 1 else out.best_values['amplitude']  # = area
     ret['fwhm'] = 2*ret['sig']  # b/c of how defined in lmfit - see docs
     ret['height'] = (((1-ret['fra'])*ret['amp']) /
-                     (ret['sig']*np.sqrt(2*np.pi)) +
+                     (ret['sig']*np.sqrt(np.pi/np.log(2))) +
                      (ret['fra']*ret['amp'])/(ret['sig']*np.pi))
     # print(out.fit_report())
     pcov = out.covar
@@ -200,7 +200,9 @@ def fits_to_csv2(x, y,  name, savename, x_min=None, x_max=None, plot=True):
         x2 = len(x) - 1
 
     fit = get_fit(x[x1:x2], y[x1:x2], plot=False)
+    print('toplot')
     if plot:
+        print('plot')
         fig = plt.figure()
         fit['full'].plot(fig=fig)
         plt.show()
