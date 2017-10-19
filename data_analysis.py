@@ -199,13 +199,7 @@ def fits_to_csv2(x, y,  name, savename, x_min=None, x_max=None, plot=True):
     else:
         x2 = len(x) - 1
 
-    fit = get_fit(x[x1:x2], y[x1:x2], plot=False)
-    print('toplot')
-    if plot:
-        print('plot')
-        fig = plt.figure()
-        fit['full'].plot(fig=fig)
-        plt.show()
+    fit = get_fit(x[x1:x2], y[x1:x2], plot=plot)
 
     table = []
     # need to calc this
