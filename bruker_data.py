@@ -20,12 +20,6 @@ from builtins import (
 import sys, os
 import numpy as np
 import struct
-import csv
-
-import matplotlib
-import matplotlib.pyplot as plt
-matplotlib.use('Qt5Agg')
-from lmfit.models import PseudoVoigtModel
 
 
 class BrukerHeader(object):
@@ -342,12 +336,11 @@ class BrukerData(object):
                 bits = 8
             elif isinstance(typ, int):
                 (mettaclass[key],) = struct.unpack('%ds' % typ,
-                        self.filecontent[pos: pos+typ])
+                            self.filecontent[pos: pos+typ])
                 continue
             (mettaclass[key],) = struct.unpack(typ,
-                    self.filecontent[pos: pos+bits])
+                            self.filecontent[pos: pos+bits])
         return mettaclass
-
 
     def __add__(self, other):
         try:
