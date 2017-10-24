@@ -25,14 +25,6 @@ import csv
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('Qt5Agg')
-
-from matplotlib.figure import Figure
-from matplotlib.colors import LogNorm
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
-import matplotlib.patheffects as path_effects
-
 from lmfit.models import PseudoVoigtModel
 
 
