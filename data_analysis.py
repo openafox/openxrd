@@ -25,20 +25,24 @@ import scipy.ndimage.filters as filters
 from scipy.signal import argrelmax
 from scipy import optimize
 import matplotlib.pyplot as plt
-import Tkinter, Tkconstants, tkFileDialog
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
+from PyQt5.QtGui import QIcon
 
 
 def get_datafiles(supported_datafiles, location):
-    root = Tkinter.Tk()
+    """Qt file dialogue widget
+    """
     types = ' '.join([row[0] for row in supported_datafiles])
-    filetypes = ('Supported', types)
-    root.update()
-    files = tkFileDialog.askopenfilenames(
-            initialdir=location,
-            title="Select file",
-            filetypes=(filetypes, ("all files", "*.*")))
-
-    root.destroy()
+    filetypes = 'Supported (' + types + ')'
+    app = QApplication(sys.argv)
+    widget =QWidget()
+    files, _ = QFileDialog.getOpenFileNames(widget,
+                                         'Program to run',
+                                          location,
+                                          filetypes +
+                                          ';;All files (*.*)',
+                                          None,
+                                          QFileDialog.DontUseNativeDialog)
     return files
 
 
@@ -273,4 +277,4 @@ def fits_to_csv(x, y, savename):
 
 
 if __name__ == '__main__':
-    pass
+    get_datafiles([".txt"])

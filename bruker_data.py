@@ -21,26 +21,19 @@ import sys, os
 import numpy as np
 import struct
 import csv
-import Tkinter, Tkconstants, tkFileDialog
 
 import matplotlib
 import matplotlib.pyplot as plt
-matplotlib.use('TkAgg')
+matplotlib.use('Qt5Agg')
+
 from matplotlib.figure import Figure
 from matplotlib.colors import LogNorm
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.patheffects as path_effects
+
 from lmfit.models import PseudoVoigtModel
-
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg as NavTool
-
-if sys.version_info[0] < 3:
-    import Tkinter as Tk
-else:
-    import tkinter as Tk
 
 
 class BrukerHeader(object):
@@ -115,7 +108,7 @@ class BrukerHeader(object):
         self.index = -1
         return self
 
-    def next(self):
+    def __next__(self):
         # Get items sorted in specified order:
         keys = sorted(self.attrs, key=lambda key: self.attrs[key][3])
         if self.index == len(keys) - 1:
@@ -258,7 +251,7 @@ class BrukerData(object):
         except IOError as e:
             print("I/O error({0}): {1}".format(e.errno, e.strerror))
 
-        if "RAW1.01" not in filecontent[0:8]:
+        if b"RAW1.01" not in filecontent[0:8]:
             raise Exception("invalid file type must be RAW1.01")
         return filecontent
 
@@ -363,91 +356,6 @@ class BrukerData(object):
                     self.filecontent[pos: pos+bits])
         return mettaclass
 
-    def plot_heatmap(self, title, mini=5, maxi=1e3, xy=None, save=True,
-                     plotpeaks=None):
-        # colors
-        # https://matplotlib.org/users/colormaps.html
-        # https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.pcolor.html
-        axlables = {'family': 'serif',
-                    'color':  'black',
-                    'weight': 'normal',
-                    'size': 14,
-                    }
-        titles = {'family': 'serif',
-                  'color':  'black',
-                  'weight': 'normal',
-                  'size': 16,
-                  }
-        lables = {'family':                 'serif',
-                  'fontname':               'DejaVu Serif',
-                  'color':                  '#66ff33',
-                  'weight':                 'normal',
-                  'size':                   12,
-                  'verticalalignment':      'center',
-                  'horizontalalignment':    'right'
-                  }
-
-        fig = Figure(figsize=(12, 6), dpi=100)
-        ax = fig.add_subplot(111)
-        plt = ax.pcolormesh(self.x, self.y, self.smap, vmin=mini, vmax=maxi,
-                            cmap='viridis')  # alpha=0.8)
-        # plt.pcolor(x, y, data, norm=LogNorm(vmin=data.min()+5,
-        #            vmax=data.max(), cmap='viridis') #alpha=0.8)
-        ax.set_xlabel('2\u03b8[\u00b0]', fontdict=titles)
-        ax.set_ylabel(u'\u03A8[\u00b0]', fontdict=titles)
-        if xy is not None:
-            points = ax.plot(xy[:, 1], xy[:, 0], 'ro', markersize=1)
-        fig.colorbar(plt)
-        # figure out later
-        # plt.tick_params(fontdict=axlables)
-        if plotpeaks:
-            # fastest?
-            # https://softwarerecs.stackexchange.com/questions/7463/fastest-python-library-to-read-a-csv-file
-            with open(plotpeaks, 'rb') as f:
-                peaks = csv.reader(row for row in f if not
-                                   row.decode('utf-8').startswith('#'))
-                for peak in peaks:
-                    txt = ax.text(peak[0], peak[1],
-                                  peak[2].decode('utf-8'), fontdict=lables)
-                    txt.set_path_effects([path_effects.Stroke(linewidth=1,
-                                         foreground='black'),
-                                         path_effects.Normal()])
-        save = True
-        if save:
-            self.plot_save_tk(fig, title)
-
-    def plot_save_tk(self, fig, name):
-        root = Tk.Tk()
-        root.wm_title(name)
-        # a tk.DrawingArea
-        canvas = FigureCanvasTkAgg(fig, master=root)
-        canvas.show()
-        canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
-
-        toolbar = NavTool(canvas, root)
-        toolbar.update()
-        canvas._tkcanvas.pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
-
-        button = Tk.Button(master=root, text='Cancel', command=lambda:
-                           root.destroy())
-        button.pack(side=Tk.BOTTOM)
-
-        button2 = Tk.Button(master=root, text='Save', command=lambda:
-                            self.write_png(fig))
-        button2.pack(side=Tk.BOTTOM)
-
-        Tk.mainloop()
-
-    def write_png(self, fig):
-        location = '~/_The_Universe/_Materials_Engr/_Mat_Systems/_BNT_BKT/_CSD/'
-        filename = tkFileDialog.asksaveasfile(initialdir=location,
-                                              mode='w',
-                                              defaultextension=".png")
-        if filename is None:  # `None` if dialog closed with "cancel".
-            print('No File Saved')
-            return
-        fig.savefig(filename, bbox_inches='tight',
-                    pad_inches=0, transparent=True)
 
     def __add__(self, other):
         try:

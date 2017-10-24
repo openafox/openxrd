@@ -34,7 +34,7 @@ from bruker_data import BrukerData
 
 
 def get_files():
-    location = '~/_The_Universe/_Materials_Engr/_Mat_Systems/_BNT_BKT/_CSD/'
+    location = '/Users/towel/_The_Universe/_Materials_Engr/_Mat_Systems/_BNT_BKT/_CSD/_Data/EAPSI'
     files = get_datafiles(['*.raw'], location)
     return files
 
@@ -61,6 +61,57 @@ def merge_data(files):
         file_list.append(datafile)
     return data_list, file_list
 
+    def plot_heatmap(self, title, mini=5, maxi=1e3, xy=None, save=True,
+                     plotpeaks=None):
+        # colors
+        # https://matplotlib.org/users/colormaps.html
+        # https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.pcolor.html
+        axlables = {'family': 'serif',
+                    'color':  'black',
+                    'weight': 'normal',
+                    'size': 14,
+                    }
+        titles = {'family': 'serif',
+                  'color':  'black',
+                  'weight': 'normal',
+                  'size': 16,
+                  }
+        lables = {'family':                 'serif',
+                  'fontname':               'DejaVu Serif',
+                  'color':                  '#66ff33',
+                  'weight':                 'normal',
+                  'size':                   12,
+                  'verticalalignment':      'center',
+                  'horizontalalignment':    'right'
+                  }
+        fig, ax = plt.subplots()
+        #fig = Figure(figsize=(12, 6), dpi=100)
+        #ax = fig.add_subplot(111)
+        plot = ax.pcolormesh(self.x, self.y, self.smap, vmin=mini, vmax=maxi,
+                            cmap='viridis')  # alpha=0.8)
+        # plt.pcolor(x, y, data, norm=LogNorm(vmin=data.min()+5,
+        #            vmax=data.max(), cmap='viridis') #alpha=0.8)
+        ax.set_xlabel('2\u03b8[\u00b0]', fontdict=titles)
+        ax.set_ylabel(u'\u03A8[\u00b0]', fontdict=titles)
+        if xy is not None:
+            points = ax.plot(xy[:, 1], xy[:, 0], 'ro', markersize=1)
+        #fig.colorbar(plot)
+        # figure out later
+        # plt.tick_params(fontdict=axlables)
+        if plotpeaks:
+            # fastest?
+            # https://softwarerecs.stackexchange.com/questions/7463/fastest-python-library-to-read-a-csv-file
+            with open(plotpeaks, 'r') as f:
+                peaks = csv.reader(row for row in f if not
+                                   row.startswith('#'))
+                for peak in peaks:
+                    txt = ax.text(peak[0], peak[1],
+                                  peak[2], fontdict=lables)
+                    txt.set_path_effects([path_effects.Stroke(linewidth=1,
+                                         foreground='black'),
+                                         path_effects.Normal()])
+        plt.show()
+
 
 files = get_files()
 data_list, file_list = merge_data(files)
@@ -83,6 +134,7 @@ for i, data in enumerate(data_list):
     data.plot_heatmap(os.path.basename(file_list[i])[:19], maxi=maxi,
                         plotpeaks=peakfile)
     #""
+    continue
 
     """ Do fits of all Automagically and save in CSV
     # fit all 2th lines
