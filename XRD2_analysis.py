@@ -32,6 +32,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.patheffects as path_effects
 import csv
+from lmfit import models
+from lmfit import lineshapes
 
 # from mpl_toolkits.mplot3d import Axes3D
 # from matplotlib import cm
@@ -90,6 +92,7 @@ def plot_heatmap(data, title, mini=5, maxi=1e3, xy=None, plotpeaks=None):
     fig, ax = plt.subplots()
     #fig = Figure(figsize=(12, 6), dpi=100)
     #ax = fig.add_subplot(111)
+    ax.set_title(os.path.basename(data.filename))
     plot = ax.pcolormesh(data.x, data.y, data.smap, vmin=mini, vmax=maxi,
                         cmap='viridis')  # alpha=0.8)
     # plt.pcolor(x, y, data, norm=LogNorm(vmin=data.min()+5,
@@ -135,10 +138,10 @@ for i, data in enumerate(data_list):
 
     mini=data.smap.min()
     maxi=data.smap.max()*.1
-    plot_heatmap(data, os.path.basename(file_list[i])[:19], maxi=maxi, xy=xy,
-                        plotpeaks=peakfile)
+    #plot_heatmap(data, os.path.basename(file_list[i])[:19], maxi=maxi)
+    #plot_heatmap(data, os.path.basename(file_list[i])[:19], maxi=maxi, xy=xy,
+    #                    plotpeaks=peakfile)
     #""
-    continue
 
     """ Do fits of all Automagically and save in CSV
     # fit all 2th lines
@@ -171,7 +174,7 @@ for i, data in enumerate(data_list):
         xs[0], ys[0] = data.get_index_xy(46.79, -10)
         xs[1], ys[1] = data.get_index_xy(41, 10)
         xs[2], ys[2] = data.get_index_xy(53, 0)
-        peaks.append('Pt111')
+        #peaks.append('Pt111')
         xs[3], ys[3] = data.get_index_xy(39.76, -10)
         xs[4], ys[4] = data.get_index_xy(35, 10)
         xs[5], ys[5] = data.get_index_xy(45, 0)
@@ -202,6 +205,7 @@ for i, data in enumerate(data_list):
     print(basename)
     print(name)
     for i in range(len(peaks)):
+        print(peaks[i])
         lines = []
         # get psi lines and fits
         # get y
@@ -211,10 +215,11 @@ for i, data in enumerate(data_list):
                                         ys[i*3+1]], 'y'))
         # psi_slice
         lines.append(smapT[xs[i*3], ys[i*3]:ys[i*3+1]])
-
+        """
         ret = get_fit(lines[0], lines[1])
         savename = os.path.join(basename, '%s_psi' % peaks[i])
         fits_to_csv2(lines[0], lines[1], name, savename, plot=False)
+        """
 
         # get 2th lines and fits
         # get x
@@ -224,10 +229,43 @@ for i, data in enumerate(data_list):
                                         ys[i*3+1]], 'x'))
         # line_2th_slice
         lines.append(data.smap[ys[i*3+2], xs[i*3+1]:xs[i*3+2]])
+        ret = []
+        plot=False
+        ret.append(get_fit(lines[3], lines[4], plot, model=models.VoigtModel()))
+        ret.append(get_fit(lines[3], lines[4], plot))
+        ret.append(get_fit(lines[3], lines[4], plot, model=models.Pearson7Model()))
 
-        ret = get_fit(lines[3], lines[4])
-        savename = os.path.join(basename, '%s_2th' % peaks[i])
-        fits_to_csv2(lines[3], lines[4], name, savename, plot=False)
+        fmt1 = ("                    {:^20s}{:^20s}{:^20s}")
+        fmt2 = ("{:^20s}{:^20f}{:^20f}{:^20f}")
+
+        print(fmt1.format('Voigt', 'PseudoVoigt', 'Pearson7'))
+        keys = [key for key in ret[0] if key in ret[1] and key in ret[2]]
+        for key in keys:
+            if key != 'full' and key != 'fit':
+                print(fmt2.format(key, ret[0][key], ret[1][key], ret[2][key]))
+                #print(fmt2.format(key, ret[0]['full'].best_values[key],
+                #    ret[1]['full'].best_values[key], ret[2]['full'].best_values[key]))
+
+        print('frac', ret[1]['fraction'])
+        fig, ax = plt.subplots()
+        ax.plot(lines[3], lines[4])
+        ax.plot(lines[3], ret[0]['fit'], label='Voigt')
+        ax.plot(lines[3], ret[1]['fit'], label='PVoigt')
+        ax.plot(lines[3], ret[2]['fit'], label='Pear')
+        ax.plot(lines[3], lineshapes.voigt(lines[3], ret[0]['amplitude'],
+            ret[0]['center'], ret[0]['sigma']))
+        ax.legend()
+        print(lineshapes.voigt(0, ret[0]['amplitude'],
+            0, ret[0]['sigma']))
+        print(lineshapes.pvoigt(0, ret[1]['amplitude'],
+            0, ret[1]['sigma'], ret[1]['fraction']))
+
+        plt.show()
+
+
+
+        #savename = os.path.join(basename, '%s_2th' % peaks[i])
+        #fits_to_csv2(lines[3], lines[4], name, savename, plot=False)
     # ""
 
 

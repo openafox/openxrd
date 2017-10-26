@@ -23,10 +23,9 @@ import scipy
 import scipy.ndimage as ndimage
 import scipy.ndimage.filters as filters
 from scipy.signal import argrelmax
-from scipy import optimize
+
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 
 
 def get_datafiles(supported_datafiles, location):
@@ -71,37 +70,29 @@ def find_peaks_1d(data, multi=0.01, add=5):
     return x
 
 
-def get_fit(x, y, plot=False):
+def get_fit(x, y, plot=False, model=PseudoVoigtModel()):
 
     # first zero background
     y_min = y.min()
     y = y-y_min
     # run model
-    mod = PseudoVoigtModel()  # VoigtModel()
-    pars = mod.guess(y, x=x)
-    out = mod.fit(y, pars, x=x)
+    pars = model.guess(y, x=x)
+    out = model.fit(y, pars, x=x)
     # Get fit values - could also use out.params[param].value
     # http://lmfit.github.io/lmfit-py/builtin_models.html#pseudovoigtmodel
-    ret = {'sig': out.best_values['sigma'],
-           'fra': out.best_values['fraction'],
-           'cen': out.best_values['center'],
-           'height_obs': np.max(y),
-           'mid_obs': x[np.argmax(y)],
-           'fit': out.best_fit,
-           'full': out
-           }
-
-    ret['amp'] = 0 if ret['sig'] > 1 else out.best_values['amplitude']  # = area
-    ret['fwhm'] = 2*ret['sig']  # b/c of how defined in lmfit - see docs
-    ret['height'] = (((1-ret['fra'])*ret['amp']) /
-                     (ret['sig']*np.sqrt(np.pi/np.log(2))) +
-                     (ret['fra']*ret['amp'])/(ret['sig']*np.pi))
-    # print(out.fit_report())
+    ret = {}
+    for key in out.params:
+        ret[key] = out.params[key].value
+    ret.update({'height_obs': np.max(y),
+                'mid_obs': x[np.argmax(y)],
+                'fit': out.best_fit,
+                'full': out
+                })
     pcov = out.covar
     perror = []
     i = 0
     for key in out.params.keys():
-        if 'fwhm' not in key:
+        if 'fwhm' not in key and 'height' not in key and 'gamma' not in key:
             ret[key[0:3]+'_error'] = (np.absolute(pcov[i][i])**0.5)
             i += 1
 
