@@ -26,8 +26,9 @@ from data_analysis import find_peaks_1d
 from data_analysis import get_fit
 from data_analysis import get_fit_all_2d
 from data_analysis import get_fit_all_1d
-from data_analysis import fits_to_csv2
+import data_analysis as DA
 from bruker_data import BrukerData
+
 import matplotlib.pyplot as plt
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.patheffects as path_effects
@@ -216,6 +217,7 @@ for i, data in enumerate(data_list):
         # psi_slice
         lines.append(smapT[xs[i*3], ys[i*3]:ys[i*3+1]])
         """
+        # Do Fit
         ret = get_fit(lines[0], lines[1])
         savename = os.path.join(basename, '%s_psi' % peaks[i])
         fits_to_csv2(lines[0], lines[1], name, savename, plot=False)
@@ -229,15 +231,18 @@ for i, data in enumerate(data_list):
                                         ys[i*3+1]], 'x'))
         # line_2th_slice
         lines.append(data.smap[ys[i*3+2], xs[i*3+1]:xs[i*3+2]])
+
+        """
+        # Do Fits
         ret = []
         plot=False
         ret.append(get_fit(lines[3], lines[4], plot, model=models.VoigtModel()))
         ret.append(get_fit(lines[3], lines[4], plot))
         ret.append(get_fit(lines[3], lines[4], plot, model=models.Pearson7Model()))
 
+        # Print as Table
         fmt1 = ("                    {:^20s}{:^20s}{:^20s}")
         fmt2 = ("{:^20s}{:^20f}{:^20f}{:^20f}")
-
         print(fmt1.format('Voigt', 'PseudoVoigt', 'Pearson7'))
         keys = [key for key in ret[0] if key in ret[1] and key in ret[2]]
         for key in keys:
@@ -246,25 +251,25 @@ for i, data in enumerate(data_list):
                 #print(fmt2.format(key, ret[0]['full'].best_values[key],
                 #    ret[1]['full'].best_values[key], ret[2]['full'].best_values[key]))
 
-        print('frac', ret[1]['fraction'])
+        # plot all together
         fig, ax = plt.subplots()
-        ax.plot(lines[3], lines[4])
+        ax.plot(lines[3], lines[4]-ret[0]['y_min'])
         ax.plot(lines[3], ret[0]['fit'], label='Voigt')
         ax.plot(lines[3], ret[1]['fit'], label='PVoigt')
         ax.plot(lines[3], ret[2]['fit'], label='Pear')
-        ax.plot(lines[3], lineshapes.voigt(lines[3], ret[0]['amplitude'],
-            ret[0]['center'], ret[0]['sigma']))
         ax.legend()
-        print(lineshapes.voigt(0, ret[0]['amplitude'],
-            0, ret[0]['sigma']))
-        print(lineshapes.pvoigt(0, ret[1]['amplitude'],
-            0, ret[1]['sigma'], ret[1]['fraction']))
 
         plt.show()
+        """
+        mods = [models.Pearson7Model, models.VoigtModel,
+                  models.PseudoVoigtModel]
+
+        savename = os.path.join(basename, '%s_2thtest' % peaks[i])
+        DA.fits_to_csv_multitype(lines[3], lines[4], name, savename,  mods)
 
 
 
-        #savename = os.path.join(basename, '%s_2th' % peaks[i])
+
         #fits_to_csv2(lines[3], lines[4], name, savename, plot=False)
     # ""
 

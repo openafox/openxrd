@@ -70,17 +70,17 @@ def find_peaks_1d(data, multi=0.01, add=5):
     return x
 
 
-def get_fit(x, y, plot=False, model=PseudoVoigtModel()):
+def get_fit(x, y, plot=False, model=PseudoVoigtModel):
 
+    ret = {}
     # first zero background
-    y_min = y.min()
-    y = y-y_min
+    ret['y_min'] = y.min()
+    y = y-ret['y_min']
     # run model
-    pars = model.guess(y, x=x)
-    out = model.fit(y, pars, x=x)
+    pars = model().guess(y, x=x)
+    out = model().fit(y, pars, x=x)
     # Get fit values - could also use out.params[param].value
     # http://lmfit.github.io/lmfit-py/builtin_models.html#pseudovoigtmodel
-    ret = {}
     for key in out.params:
         ret[key] = out.params[key].value
     ret.update({'height_obs': np.max(y),
@@ -182,8 +182,76 @@ def get_fit_all_1d(line, x_axis, position=None, maxs=None, plot=False):
 
     return rets
 
+def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
+                          x_min=None, x_max=None, plot=False):
 
-def fits_to_csv2(x, y,  name, savename, x_min=None, x_max=None, plot=True):
+    # set limits if secified
+    if x_min:
+        x1 = np.abs(x-x_min).argmin()
+    else:
+        x1 = 0
+    if x_max:
+        x2 = np.abs(x-x_max).argmin()
+    else:
+        x2 = len(x) - 1
+
+    fits = []
+    names = []
+    # Get the fits
+    for model in models:
+        names.append(model.__name__[0:-5])
+        fits.append(get_fit(x[x1:x2], y[x1:x2], plot=plot, model=model))
+
+    # make table for csv (really a row unless adding header)
+    table = []
+    i = 0
+    if not os.path.exists(savename+'fits.csv'):
+        # Add headers
+        table = [['name', 'mid_obs', 'height_obs']]
+        for name in names:
+            table[0] += [name + '_mid', name + 'mid_err',
+                            name + '_2d',  name + '_2d_err']
+        for name in names:
+            table[0] += [name + '_height', name + '_fwhm', name + '_Area']
+        for name in names:
+            table[0] += [name + '_sig_err', name + '_A_err', name + '_R^2']
+
+        i = 1
+
+    # Add Data
+    table.append([name, fits[0]['mid_obs'], fits[0]['height_obs']])
+    for j, name in enumerate(names):
+        col = chr(65+3+j)
+        col2 = chr(65+4+j)
+        table[i] += [fits[j]['center'], fits[j]['cen_error'],
+                        '=1.540598/(SIN(%s2*PI()/360))' % col,
+                        '=0.192575*SIN(%s2*PI()/360)*CSC(%s2*PI()/360)^3*%s2*PI()/180'
+                        % (col, col, col2)]
+    for j, name in enumerate(names):
+        table[i] += [fits[j]['height'], fits[j]['fwhm'], fits[j]['amplitude']]
+    for j, name in enumerate(names):
+        table[i] += [fits[j]['sig_error'], fits[j]['amp_error'],
+                     fits[0]['r^2']]
+
+    with open(savename+'fits.csv', 'a') as f:
+        writer = csv.writer(f)
+        writer.writerows(table)
+    # Append column to csv
+    """
+    if not os.path.exists(savename+'fitdata.csv'):
+        table = [[x[x1:x2][j]] + [y[x1:x2][j]] + [row] for j, row in
+                 enumerate(fit['fit'].tolist())]
+        table.insert(0, ['angle', name, name + '_fit'])
+        with open(savename+'fitdata.csv', 'wb') as f:
+            writer = csv.writer(f)
+            writer.writerows(table)
+    else:
+        csv_append_col(savename+'fitdata', [name] + y[x1:x2].tolist())
+        csv_append_col(savename+'fitdata', [name + '_fit'] +
+                       fit['fit'].tolist())
+                       """
+
+def fits_to_csv_PsVoigt(x, y,  name, savename, x_min=None, x_max=None, plot=True):
 
     if x_min:
         x1 = np.abs(x-x_min).argmin()
@@ -197,7 +265,7 @@ def fits_to_csv2(x, y,  name, savename, x_min=None, x_max=None, plot=True):
     fit = get_fit(x[x1:x2], y[x1:x2], plot=plot)
 
     table = []
-    # need to calc this
+    # explination of how to calc errors - propegation
     # https://chem.libretexts.org/Core/Analytical_Chemistry/Quantifying_Nature/Significant_Digits/Propagation_of_Error
     height_error = (((fit['fra_error'])*fit['amp_error']) /
                     (fit['sig_error']*np.sqrt(2*np.pi)) +
@@ -247,7 +315,7 @@ def csv_append_col(filename, column):
         writer.writerows(table)
 
 
-def fits_to_csv(x, y, savename):
+def fits_to_csv_autopeaks(x, y, savename):
     maxs = find_peaks_1d(y, 0.20)
     rets = get_fit_all_1d(y, x, maxs=maxs, plot=False)
     print('rets', len(rets))
