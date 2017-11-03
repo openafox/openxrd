@@ -93,7 +93,10 @@ def get_fit(x, y, plot=False, model=PseudoVoigtModel):
     i = 0
     for key in out.params.keys():
         if 'fwhm' not in key and 'height' not in key and 'gamma' not in key:
-            ret[key[0:3]+'_error'] = (np.absolute(pcov[i][i])**0.5)
+            if pcov is not None:
+                ret[key[0:3]+'_error'] = np.absolute(pcov[i][i])**0.5
+            else:
+                ret[key[0:3]+'_error'] = 'N/A'
             i += 1
 
     # https://www.mathworks.com/help/curvefit/evaluating-goodness-of-fit.html?s_tid=gn_loc_drop
@@ -183,7 +186,8 @@ def get_fit_all_1d(line, x_axis, position=None, maxs=None, plot=False):
     return rets
 
 def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
-                          x_min=None, x_max=None, plot=False):
+                          x_min=None, x_max=None, plot=False,
+                          extrahead=[], extra=[]):
 
     # set limits if secified
     if x_min:
@@ -207,7 +211,7 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
     i = 0
     if not os.path.exists(savename+'fits.csv'):
         # Add headers
-        table = [['name', 'mid_obs', 'height_obs']]
+        table = [['name', 'mid_obs', 'height_obs'] + extrahead]
         for name in names:
             table[0] += [name + '_mid', name + 'mid_err',
                             name + '_2d',  name + '_2d_err']
@@ -219,10 +223,10 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
         i = 1
 
     # Add Data
-    table.append([name, fits[0]['mid_obs'], fits[0]['height_obs']])
+    table.append([name, fits[0]['mid_obs'], fits[0]['height_obs']] + extra)
     for j, name in enumerate(names):
-        col = chr(65+3+j)
-        col2 = chr(65+4+j)
+        col = chr(65+3+j*4)
+        col2 = chr(65+4+j*4)
         table[i] += [fits[j]['center'], fits[j]['cen_error'],
                         '=1.540598/(SIN(%s2*PI()/360))' % col,
                         '=0.192575*SIN(%s2*PI()/360)*CSC(%s2*PI()/360)^3*%s2*PI()/180'

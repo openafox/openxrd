@@ -122,8 +122,8 @@ def plot_heatmap(data, title, mini=5, maxi=1e3, xy=None, plotpeaks=None):
     plt.show()
 
 
-def fits_to_csv(x, y,  name, savename, models=[models.PseudoVoigtModel],
-                          x_min=None, x_max=None, plot=False):
+def get_name_data(name):
+
     comp_thick = {"19_24": (2.5, 200),
                   "20_19": (2.5, 400),
                   "20_21": (2.5, 400),
@@ -143,6 +143,14 @@ def fits_to_csv(x, y,  name, savename, models=[models.PseudoVoigtModel],
                   "20_31": (0, 400),
                   "20_03": (0, 600)
                   }
+
+    comp, thick = comp_thick[name[8:13]]
+    num = name[17:19]
+    volt = name[20:23]
+    return [comp, thick, num, volt]
+
+def fits_to_csv(x, y,  name, savename, models=[models.PseudoVoigtModel],
+                          x_min=None, x_max=None, plot=False):
 
     # set limits if secified
     if x_min:
@@ -174,10 +182,7 @@ def fits_to_csv(x, y,  name, savename, models=[models.PseudoVoigtModel],
         i = 1
 
     # Add Data
-    comp, thick = comp_thick[name[8:13]]
-    num = name[17:19]
-    volt = name[20:23]
-    table.append([name, thick, comp, num, volt,  fits[0]['mid_obs']])
+    table.append([name] + get_name_data(name) + [fits[0]['mid_obs']])
     for j, mname in enumerate(mnames):
         print(name)
         print(name[8:13])
@@ -298,6 +303,14 @@ if __name__ == '__main__':
             savename = os.path.join(basename, '%s_psi' % peaks[i])
             fits_to_csv2(lines[0], lines[1], name, savename, plot=False)
             """
+            mods = [models.Pearson7Model, models.VoigtModel,
+                    models.PseudoVoigtModel]
+            directory = os.path.abspath(os.path.join(basename, os.pardir))
+
+            savename = os.path.join(directory, '%s_psi' % peaks[i])
+            DA.fits_to_csv_multitype(lines[0], lines[1], name, savename,  mods,
+                                     extrahead=['comp', 'thick', 'num', 'volt'],
+                                     extra=get_name_data(name))
 
             # get 2th lines and fits
             # get x
@@ -308,8 +321,18 @@ if __name__ == '__main__':
             # line_2th_slice
             lines.append(data.smap[ys[i*3+2], xs[i*3+1]:xs[i*3+2]])
 
-            """
             # Do Fits
+
+            mods = [models.Pearson7Model, models.VoigtModel,
+                    models.PseudoVoigtModel]
+            directory = os.path.abspath(os.path.join(basename, os.pardir))
+
+            savename = os.path.join(directory, '%s_2th' % peaks[i])
+            DA.fits_to_csv_multitype(lines[3], lines[4], name, savename,  mods,
+                                     extrahead=['comp', 'thick', 'num', 'volt'],
+                                     extra=get_name_data(name))
+
+            """
             ret = []
             plot=False
             ret.append(get_fit(lines[3], lines[4], plot, model=models.VoigtModel()))
@@ -337,13 +360,7 @@ if __name__ == '__main__':
 
             plt.show()
             """
-            mods = [models.Pearson7Model, models.VoigtModel,
-                    models.PseudoVoigtModel]
-            directory = os.path.abspath(os.path.join(basename, os.pardir))
-
-            savename = os.path.join(directory, '%s_2thtest' % peaks[i])
-            #DA.fits_to_csv_multitype(lines[3], lines[4], name, savename,  mods)
-            fits_to_csv(lines[3], lines[4], name, savename,  mods)
+            #fits_to_csv(lines[3], lines[4], name, savename,  mods)
 
 
 
