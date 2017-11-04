@@ -189,6 +189,9 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
                           x_min=None, x_max=None, plot=False,
                           extrahead=[], extra=[]):
 
+    if len(extrahead) != len(extra):
+        raise  Exception('extrahead and extra must be of same length')
+
     # set limits if secified
     if x_min:
         x1 = np.abs(x-x_min).argmin()
@@ -225,8 +228,8 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
     # Add Data
     table.append([name, fits[0]['mid_obs'], fits[0]['height_obs']] + extra)
     for j, name in enumerate(names):
-        col = chr(65+3+j*4)
-        col2 = chr(65+4+j*4)
+        col = chr(65+3+j*4+len(extra))
+        col2 = chr(65+4+j*4+len(extra))
         table[i] += [fits[j]['center'], fits[j]['cen_error'],
                         '=1.540598/(SIN(%s2*PI()/360))' % col,
                         '=0.192575*SIN(%s2*PI()/360)*CSC(%s2*PI()/360)^3*%s2*PI()/180'
