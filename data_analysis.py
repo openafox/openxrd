@@ -203,10 +203,10 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
         x2 = len(x) - 1
 
     fits = []
-    names = []
+    mod_nms = []
     # Get the fits
     for model in models:
-        names.append(model.__name__[0:-5])
+        mod_nms.append(model.__name__[0:-5])
         fits.append(get_fit(x[x1:x2], y[x1:x2], plot=plot, model=model))
 
     # make table for csv (really a row unless adding header)
@@ -215,28 +215,28 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
     if not os.path.exists(savename+'fits.csv'):
         # Add headers
         table = [['name', 'mid_obs', 'height_obs'] + extrahead]
-        for name in names:
-            table[0] += [name + '_mid', name + 'mid_err',
-                            name + '_2d',  name + '_2d_err']
-        for name in names:
-            table[0] += [name + '_height', name + '_fwhm', name + '_Area']
-        for name in names:
-            table[0] += [name + '_sig_err', name + '_A_err', name + '_R^2']
+        for mod_nm in mod_nms:
+            table[0] += [mod_nm + '_mid', mod_nm + 'mid_err',
+                            mod_nm + '_2d',  mod_nm + '_2d_err']
+        for mod_nm in mod_nms:
+            table[0] += [mod_nm + '_height', mod_nm + '_fwhm', mod_nm + '_Area']
+        for mod_nm in mod_nms:
+            table[0] += [mod_nm + '_sig_err', mod_nm + '_A_err', mod_nm + '_R^2']
 
         i = 1
 
     # Add Data
     table.append([name, fits[0]['mid_obs'], fits[0]['height_obs']] + extra)
-    for j, name in enumerate(names):
+    for j, mod_nm in enumerate(mod_nms):
         col = chr(65+3+j*4+len(extra))
         col2 = chr(65+4+j*4+len(extra))
         table[i] += [fits[j]['center'], fits[j]['cen_error'],
                         '=1.540598/(SIN(%s2*PI()/360))' % col,
                         '=0.192575*SIN(%s2*PI()/360)*1/SIN(%s2*PI()/360)^3*%s2*PI()/180'
                         % (col, col, col2)]
-    for j, name in enumerate(names):
+    for j, mod_nm in enumerate(mod_nms):
         table[i] += [fits[j]['height'], fits[j]['fwhm'], fits[j]['amplitude']]
-    for j, name in enumerate(names):
+    for j, mod_nm in enumerate(mod_nms):
         table[i] += [fits[j]['sig_error'], fits[j]['amp_error'],
                      fits[0]['r^2']]
 

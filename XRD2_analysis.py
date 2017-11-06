@@ -163,10 +163,10 @@ def fits_to_csv(x, y,  name, savename, models=[models.PseudoVoigtModel],
         x2 = len(x) - 1
 
     fits = []
-    mnames = []
+    mod_nms = []
     # Get the fits
     for model in models:
-        mnames.append(model.__name__[0:-5])
+        mod_nms.append(model.__name__[0:-5])
         fits.append(get_fit(x[x1:x2], y[x1:x2], plot=plot, model=model))
 
     # make table for csv (really a row unless adding header)
@@ -175,15 +175,15 @@ def fits_to_csv(x, y,  name, savename, models=[models.PseudoVoigtModel],
     if not os.path.exists(savename+'_d-fits.csv'):
         # Add headers
         table = [['Name', 'Thickness', 'Comp', 'Num', 'V', 'mid_obs']]
-        for mname in mnames:
-            table[0] += [mname + '_mid', mname + 'mid_err',
-                         mname + '_2d',  mname + '_2d_err']
+        for mod_nm in mod_nms:
+            table[0] += [mod_nm + '_mid', mod_nm + 'mid_err',
+                         mod_nm + '_2d',  mod_nm + '_2d_err']
 
         i = 1
 
     # Add Data
     table.append([name] + get_name_data(name) + [fits[0]['mid_obs']])
-    for j, mname in enumerate(mnames):
+    for j, mod_nm in enumerate(mod_nms):
         print(name)
         print(name[8:13])
         col = chr(65+6+j*4)
