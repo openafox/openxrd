@@ -190,7 +190,7 @@ def fits_to_csv(x, y,  name, savename, models=[models.PseudoVoigtModel],
         col2 = chr(65+7+j*4)
         table[i] += [fits[j]['center'], fits[j]['cen_error'],
                         '=1.540598/(SIN(%s2*PI()/360))' % col,
-                        '=0.192575*SIN(%s2*PI()/360)*CSC(%s2*PI()/360)^3*%s2*PI()/180'
+                        '=0.192575*SIN(%s2*PI()/360)*1/SIN(%s2*PI()/360)^3*%s2*PI()/180'
                         % (col, col, col2)]
 
     with open(savename+'_d-fits.csv', 'a') as f:
