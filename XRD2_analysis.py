@@ -256,7 +256,7 @@ if __name__ == '__main__':
             xs[0], ys[0] = data.get_index_xy(46.79, -10)
             xs[1], ys[1] = data.get_index_xy(41, 10)
             xs[2], ys[2] = data.get_index_xy(53, 0)
-            #peaks.append('Pt111')
+            peaks.append('Pt111')
             xs[3], ys[3] = data.get_index_xy(39.76, -10)
             xs[4], ys[4] = data.get_index_xy(35, 10)
             xs[5], ys[5] = data.get_index_xy(45, 0)
@@ -310,7 +310,7 @@ if __name__ == '__main__':
             savename = os.path.join(directory, '%s_psi' % peaks[i])
             DA.fits_to_csv_multitype(lines[0], lines[1], name, savename,  mods,
                                      extrahead=['comp', 'thick', 'num', 'volt'],
-                                     extra=get_name_data(name))
+                                     extra=get_name_data(name), psi=True)
 
             # get 2th lines and fits
             # get x

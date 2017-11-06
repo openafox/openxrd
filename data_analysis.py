@@ -187,7 +187,7 @@ def get_fit_all_1d(line, x_axis, position=None, maxs=None, plot=False):
 
 def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
                           x_min=None, x_max=None, plot=False,
-                          extrahead=[], extra=[]):
+                          extrahead=[], extra=[], psi=False):
 
     if len(extrahead) != len(extra):
         raise  Exception('extrahead and extra must be of same length')
@@ -216,8 +216,9 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
         # Add headers
         table = [['name', 'mid_obs', 'height_obs'] + extrahead]
         for mod_nm in mod_nms:
-            table[0] += [mod_nm + '_mid', mod_nm + 'mid_err',
-                            mod_nm + '_2d',  mod_nm + '_2d_err']
+            table[0] += [mod_nm + '_mid', mod_nm + 'mid_err']
+            if not psi:
+                table[0] += [mod_nm + '_2d',  mod_nm + '_2d_err']
         for mod_nm in mod_nms:
             table[0] += [mod_nm + '_height', mod_nm + '_fwhm', mod_nm + '_Area']
         for mod_nm in mod_nms:
@@ -230,10 +231,11 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
     for j, mod_nm in enumerate(mod_nms):
         col = chr(65+3+j*4+len(extra))
         col2 = chr(65+4+j*4+len(extra))
-        table[i] += [fits[j]['center'], fits[j]['cen_error'],
-                        '=1.540598/(SIN(%s2*PI()/360))' % col,
-                        '=0.192575*SIN(%s2*PI()/360)*1/SIN(%s2*PI()/360)^3*%s2*PI()/180'
-                        % (col, col, col2)]
+        table[i] += [fits[j]['center'], fits[j]['cen_error']]
+        if not psi:
+            table[i] += ['=1.540598/(SIN(%s2*PI()/360))' % col,
+                         '=0.192575*SIN(%s2*PI()/360)*1/SIN(%s2*PI()/360)^3*%s2*PI()/180'
+                         % (col, col, col2)]
     for j, mod_nm in enumerate(mod_nms):
         table[i] += [fits[j]['height'], fits[j]['fwhm'], fits[j]['amplitude']]
     for j, mod_nm in enumerate(mod_nms):
