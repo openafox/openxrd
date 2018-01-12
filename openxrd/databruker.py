@@ -171,8 +171,8 @@ class BrukerRangeHeader(BrukerHeader):
             }
 
 
-class BrukerSupplementalHeader(BrukerHeader):
-    """Bruker Raw Supplemental Header Dictonary"""
+class BrukerSupp200(BrukerHeader):
+    """Bruker Raw Area Detector Supplemental Header Dictonary"""
 
     def __init__(self):
         # For each metta data set keywords are contain (1) the actual
@@ -193,6 +193,126 @@ class BrukerSupplementalHeader(BrukerHeader):
             'act_omega':     [None, 'act omega',                '<f',  60],
             'act_phi':       [None, 'act phi',                  '<f',  64],
             'act_psi':       [None, 'act psi',                  '<f',  68],
+            }
+
+
+class BrukerSupp190(BrukerHeader):
+    """Bruker Raw EVA Supplemental Header Dictonary"""
+
+    def __init__(self):
+        # For each metta data set keywords are contain (1) the actual
+        # value, (2) a user-suitable label for the item, (3) the data type
+        # and (4) the data position in the group:
+        # ordering index:
+        self.attrs = {
+            'type':          [None, 'Record type',              '<I',   0],
+            'length':        [None, 'record length',            '<I',   4],
+            '2th_off':       [None, '2theta offset [deg]',      '<f',   8],
+            'int_off':       [None, 'intensity offset [% max]', '<f',  12],
+            'ig_z':          [None, 'reserved for expansion',   '16',  16],
+            }
+
+
+
+class BrukerSupp150(BrukerHeader):
+    """Bruker Raw removed data for search Supplemental Header Dictonary"""
+
+    def __init__(self):
+        # For each metta data set keywords are contain (1) the actual
+        # value, (2) a user-suitable label for the item, (3) the data type
+        # and (4) the data position in the group:
+        # ordering index:
+        self.attrs = {
+            'type':          [None, 'Record type',              '<I',   0],
+            'length':        [None, 'record length',            '<I',   4],
+            'ex_start':      [None, 'excld 2theta start [deg]', '<f',   8],
+            'ex_end':        [None, 'excld 2theta end [deg]',   '<f',  12],
+            'ig_z':          [None, 'reserved for expansion',   '16',  16],
+            }
+
+
+class BrukerSupp140(BrukerHeader):
+    """Bruker Raw Comment Supplemental Header Dictonary"""
+    #Need to fig out how to handle variable length
+
+    def __init__(self):
+        # For each metta data set keywords are contain (1) the actual
+        # value, (2) a user-suitable label for the item, (3) the data type
+        # and (4) the data position in the group:
+        # ordering index:
+        self.attrs = {
+            'type':          [None, 'Record type',              '<I',   0],
+            'length':        [None, 'record length',            '<I',   4],
+            'comment':       [None, 'comment',                  '??',  16],
+            }
+
+
+class BrukerSupp130(BrukerHeader):
+    """Bruker Raw QCI parameters (obsolete) Supplemental Header Dictonary"""
+    #Need to fig out how to handle variable length
+
+    def __init__(self):
+        # For each metta data set keywords are contain (1) the actual
+        # value, (2) a user-suitable label for the item, (3) the data type
+        # and (4) the data position in the group:
+        # ordering index:
+        self.attrs = {
+            'type':          [None, 'Record type',              '<I',   0],
+            'length':        [None, 'record length',            '<I',   4],
+            'var_type':      [None, 'variable type',            '<f',   8],
+            'comp_name':     [None, 'ASCII:compound name',      '??',  12],
+            'ig_z':          [None, 'reserved for expansion',   '??',  ??],
+            }
+
+
+class BrukerSupp120(BrukerHeader):
+    """Bruker Raw Description for Optimized Quantitative Measurement
+    record Supplemental Header Dictonary"""
+
+    def __init__(self):
+        # For each metta data set keywords are contain (1) the actual
+        # value, (2) a user-suitable label for the item, (3) the data type
+        # and (4) the data position in the group:
+        # ordering index:
+        self.attrs = {
+            'type':          [None, 'Record type',              '<I',   0],
+            'length':        [None, 'record length',            '<I',   4],
+            'ig_z':          [None, 'undefined',                '64',   8],
+            }
+
+
+class BrukerSupp110(BrukerHeader):
+    """Bruker Raw PSD parameters Supplemental Header Dictonary"""
+
+    def __init__(self):
+        # For each metta data set keywords are contain (1) the actual
+        # value, (2) a user-suitable label for the item, (3) the data type
+        # and (4) the data position in the group:
+        # ordering index:
+        self.attrs = {
+            'type':          [None, 'Record type',              '<I',   0],
+            'length':        [None, 'record length',            '<I',   4],
+            'goni_2th':      [None, '2theta of goni[deg]',      '<f',   8],
+            'chnl':          [None, 'first channel used',       '<f',  12],
+            'ig_z':          [None, 'reserved for expansion',   '16',  16],
+            }
+
+
+class BrukerSupp100(BrukerHeader):
+    """Bruker Raw Oscillation parameters Supplemental Header Dictonary"""
+
+    def __init__(self):
+        # For each metta data set keywords are contain (1) the actual
+        # value, (2) a user-suitable label for the item, (3) the data type
+        # and (4) the data position in the group:
+        # ordering index:
+        self.attrs = {
+            'type':          [None, 'Record type',              '<I',   0],
+            'length':        [None, 'record length',            '<I',   4],
+            'osc_drv':       [None, 'oscillation drive',        '<f',   8],
+            'osc_amp':       [None, 'oscil amp[deg or mm]',     '<d',  16],
+            'osc_spd':       [None, 'oscil spd[deg/s or mm/s]', '<f',  24],
+            'ig_z':          [None, 'reserved for expansion',   '12',  28],
             }
 
 
@@ -253,21 +373,21 @@ class BrukerData(object):
         (typ, ) = struct.unpack('<I', self.filecontent[pos: pos+4])
         # Check type of supplemental
         if typ == 200:  # Area Detector Parameters
-            rng.supmetta = self.get_metta(BrukerSupplementalHeader(), pos)
+            rng.supmetta = self.get_metta(BrukerSupp200(), pos)
         elif typ == 190:  # offset assigned by EVA
-            pass
+            rng.supmetta = self.get_metta(BrukerSupp190(), pos)
         elif typ == 150:  # removed data for search
-            pass
+            rng.supmetta = self.get_metta(BrukerSupp150(), pos)
         elif typ == 140:  # comment
-            pass
+            rng.supmetta = self.get_metta(BrukerSupp140(), pos)
         elif typ == 130:  # QCI parameters (obsolete)
-            pass
+            rng.supmetta = self.get_metta(BrukerSupp130(), pos)
         elif typ == 120:  # OQM parameters
-            pass
+            rng.supmetta = self.get_metta(BrukerSupp120(), pos)
         elif typ == 110:  # PSD parameters
-            pass
+            rng.supmetta = self.get_metta(BrukerSupp110(), pos)
         elif typ == 100:  # oscillation parameters
-            pass
+            rng.supmetta = self.get_metta(BrukerSupp100(), pos)
         pos += rng.metta['sup_len']
         data_len = rng.metta['steps']
         for i in range(data_len):
