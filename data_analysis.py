@@ -34,14 +34,14 @@ def get_datafiles(supported_datafiles, location):
     types = ' '.join([row[0] for row in supported_datafiles])
     filetypes = 'Supported (' + types + ')'
     app = QApplication(sys.argv)
-    widget =QWidget()
-    files, _ = QFileDialog.getOpenFileNames(widget,
-                                         'Program to run',
-                                          location,
-                                          filetypes +
-                                          ';;All files (*.*)',
-                                          None,
-                                          QFileDialog.DontUseNativeDialog)
+    widget = QWidget()
+    files, _ = QFileDialog.getOpenFileNames(
+                        widget,
+                        'Program to run',
+                        location,
+                        filetypes + ';;All files (*.*)',
+                        None,
+                        QFileDialog.DontUseNativeDialog)
     return files
 
 
@@ -185,9 +185,11 @@ def get_fit_all_1d(line, x_axis, position=None, maxs=None, plot=False):
 
     return rets
 
+
 def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
-                          x_min=None, x_max=None, plot=False,
-                          extrahead=[], extra=[], psi=False):
+                          x_min=None, x_max=None, psi=False,
+                          extrahead=[], extra=[],
+                          plot=False, plot_all=False, print_out=False):
 
     if len(extrahead) != len(extra):
         raise  Exception('extrahead and extra must be of same length')
@@ -208,6 +210,30 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
     for model in models:
         mod_nms.append(model.__name__[0:-5])
         fits.append(get_fit(x[x1:x2], y[x1:x2], plot=plot, model=model))
+
+    # Print all fits as a Table
+    if print_out:
+        print(' '*20, ''.join('{:^20s}'.format(s) for s in mod_nms))
+        all_keys = [k for d in fits for k in d.keys()]
+        keys = {k for k in all_keys if all_keys.count(k)==len(fits)}
+        for key in keys:
+            if key != 'full' and key != 'fit':
+                print('{:^20s}'.format(key),
+                      ''.join('{:^20f}'.format(fit[key]) for fit in fits))
+    # plot all together
+    if plot_all:
+        fig, ax = plt.subplots()
+        ax.plot(x[x1:x2], y[x1:x2]-min(y))
+        for j, mod_nm in enumerate(mod_nms):
+            ax.plot(x[x1:x2], fits[j]['fit'], label=mod_nm)
+        ax.legend()
+        # ax.legend(bbox_to_anchor=(0,1.02,1,0.2), loc="lower left", ncol=3)
+        ax.set_ylabel('Intensity')
+        if psi:
+            ax.set_xlabel(u'\u03a8[\u00b0]')
+        else:
+            ax.set_xlabel(u'2\u03b8[\u00b0]')
+        plt.show()
 
     # make table for csv (really a row unless adding header)
     table = []
@@ -245,22 +271,11 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
     with open(savename+'fits.csv', 'a') as f:
         writer = csv.writer(f)
         writer.writerows(table)
-    # Append column to csv
-    """
-    if not os.path.exists(savename+'fitdata.csv'):
-        table = [[x[x1:x2][j]] + [y[x1:x2][j]] + [row] for j, row in
-                 enumerate(fit['fit'].tolist())]
-        table.insert(0, ['angle', name, name + '_fit'])
-        with open(savename+'fitdata.csv', 'wb') as f:
-            writer = csv.writer(f)
-            writer.writerows(table)
-    else:
-        csv_append_col(savename+'fitdata', [name] + y[x1:x2].tolist())
-        csv_append_col(savename+'fitdata', [name + '_fit'] +
-                       fit['fit'].tolist())
-                       """
 
-def fits_to_csv_PsVoigt(x, y,  name, savename, x_min=None, x_max=None, plot=True):
+
+def fit_data_to_csv(x, y,  name, savename,
+                     x_min=None, x_max=None,
+                     model=PseudoVoigtModel, plot=True):
 
     if x_min:
         x1 = np.abs(x-x_min).argmin()
@@ -271,42 +286,14 @@ def fits_to_csv_PsVoigt(x, y,  name, savename, x_min=None, x_max=None, plot=True
     else:
         x2 = len(x) - 1
 
-    fit = get_fit(x[x1:x2], y[x1:x2], plot=plot)
+    fit = get_fit(x[x1:x2], y[x1:x2], plot=plot, model=model)
 
-    table = []
-    # explination of how to calc errors - propegation
-    # https://chem.libretexts.org/Core/Analytical_Chemistry/Quantifying_Nature/Significant_Digits/Propagation_of_Error
-    height_error = (((fit['fra_error'])*fit['amp_error']) /
-                    (fit['sig_error']*np.sqrt(2*np.pi)) +
-                    (fit['fra_error']*fit['amp_error']) /
-                    (fit['sig_error']*np.pi))
-    # print(ret['amp_error'], ret['cen_error'],
-    #       ret['sig_error'], ret['fra_error'])
-    if not os.path.exists(savename+'fits.csv'):
-        table = [['name', 'cent', 'cent_error',
-                  'd', 'd*2',
-                  'StDev',
-                  'mid_obs',
-                  'fwhm', 'fwhm_error',
-                  'Area', 'Area_error',
-                  'height', 'height_error', 'height_obs', 'R^2']]
-    table.append([name, fit['cen'], fit['cen_error'],
-                  '=1.540598/(SIN(B2*PI()/360)*2)', '=2*D2',
-                  '=0.192575*SIN(B2*PI()/360)*CSC(B2*PI()/360)^3*C2*PI()/180',
-                  fit['mid_obs'],
-                  fit['fwhm'], fit['sig_error']*2,
-                  fit['amp'], fit['amp_error'],
-                  fit['height_obs'], height_error, fit['height'], fit['r^2']]
-                 )
-    with open(savename+'fits.csv', 'ab') as f:
-        writer = csv.writer(f)
-        writer.writerows(table)
     # Append column to csv
     if not os.path.exists(savename+'fitdata.csv'):
         table = [[x[x1:x2][j]] + [y[x1:x2][j]] + [row] for j, row in
                  enumerate(fit['fit'].tolist())]
         table.insert(0, ['angle', name, name + '_fit'])
-        with open(savename+'fitdata.csv', 'wb') as f:
+        with open(savename+'fitdata.csv', 'w') as f:
             writer = csv.writer(f)
             writer.writerows(table)
     else:
@@ -315,13 +302,61 @@ def fits_to_csv_PsVoigt(x, y,  name, savename, x_min=None, x_max=None, plot=True
                        fit['fit'].tolist())
 
 
-def csv_append_col(filename, column):
-    with open(filename+'.csv', 'rb') as f_in:
-        reader = csv.reader(f_in)
-        table = [row + [column[j]] for j, row in enumerate(reader)]
-    with open(filename+'.csv', 'wb') as f:
+def csv_append_col(filename, column, len_policy="ls"):
+    """Append columns to a csv file.
+    len_policy allows column(s) to add to be longer 'l', shorter 's', or
+    require the exact lengths 'not l or s' as the table in the file.
+    'ls' or 'sl' is also valid.
+    """
+    if not isinstance(column, list):
+        if isinstance(column, np.ndarray):
+            column = column.tolist()
+        else:
+            raise TypeError("column must be python list or numpy.ndarray")
+
+    if not '.csv' in filename[-4:]:
+        filename += '.csv'
+    if os.path.exists(filename):
+        with open(filename, 'r') as f_in:
+            filetable = list(csv.reader(f_in))
+            f_len = len(filetable)
+            f_cols = num_cols(filetable)
+            c_len = len(column)
+            c_cols = num_cols(column)
+            if f_len > c_len:
+                if "s" in len_policy:
+                    addit = [[""] * c_cols] * (f_len - c_len)
+                    column = column + addit
+                else:
+                    raise ValueError("column (len=%d) can not be shorter then "
+                            "the table in the file (len=%d), unless "
+                            "len_policy='s'" % (c_len, f_len))
+
+            if f_len < c_len:
+                if "l" in len_policy:
+                    addit = [[""] * f_cols] * (c_len - f_len)
+                    cols = num_cols(filetable)
+                    filetable += (addit)
+                else:
+                    raise ValueError("column (len=%d) can not be longer then "
+                            "the table in the file (len=%d), unless "
+                            "len_policy='l'" % (c_len, f_len))
+
+            if c_cols == 1 and not isinstance(column[0], list):
+                table = [row + [column[j]] for j, row in enumerate(filetable)]
+            else:
+                table = [row + column[j] for j, row in enumerate(filetable)]
+
+    else:
+        table = column
+    with open(filename, 'w') as f:
         writer = csv.writer(f)
         writer.writerows(table)
+
+def num_cols(array):
+    if isinstance(array[0], list):
+        return len(array[0])
+    return 1
 
 
 def fits_to_csv_autopeaks(x, y, savename):
@@ -337,12 +372,37 @@ def fits_to_csv_autopeaks(x, y, savename):
         writer = csv.writer(f)
         writer.writerows(table)
 
+
 # Future adds deconvolving peaks
 # http://kitchingroup.cheme.cmu.edu/blog/2013/01/29/Curve-fitting-to-get-overlapping-peak-areas/
 # https://stackoverflow.com/questions/10143905/python-two-curve-gaussian-fitting-with-non-linear-least-squares
 # and for ideas
 # https://www.wavemetrics.com/products/igorpro/dataanalysis/peakanalysis/multipeakfitting.htm
 
+# explination of how to calc errors - propegation
+# https://chem.libretexts.org/Core/Analytical_Chemistry/Quantifying_Nature/Significant_Digits/Propagation_of_Error
+
 
 if __name__ == '__main__':
-    get_datafiles([".txt"])
+    # datafile = get_datafiles([".txt"])
+
+    # Test csv_append_col #
+    exfiles = os.path.abspath(os.path.join(os.path.dirname( __file__ ),
+                                           'examplefiles'))
+    crnt_file = os.path.join(exfiles, "CRNT.csv")
+    with open(crnt_file, 'r') as f_in:
+            reader = csv.reader(f_in)
+            col_len = len(list(reader))
+    add_col = []
+    add_col.append(list(range(0, col_len - 10)))
+    add_col.append([[x] for x in range(0, col_len)])
+    add_col.append(np.linspace(0, 10, col_len - 10).tolist())
+    # add_col.append(np.linspace(0, 10, col_len - 10).tolist())
+    for col in add_col:
+        csv_append_col(crnt_file, col, '')
+        print('try')
+    #add_col = list(map(list, zip(*add_col)))
+    #print(len(add_col), len(add_col[0]))
+    #csv_append_col(crnt_file, add_col)
+    #print('done')
+    #########################

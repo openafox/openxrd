@@ -217,10 +217,13 @@ class BrukerData(object):
             for i in range(self.header['range_cnt']):
                 rng, pos = self.get_range(pos)
                 self.add_range(rng)
-            if self.rngs[0].supmetta['type'] == 200:
+            if self.rngs[0].supmetta['type'] == 200:  # Area map
                 self.x = []
                 self.y = []
                 self.get_smap()
+            else:
+                raise Exception("not file from area detector, this is "
+                                "currently not supported. Sorry")
         else:
             self.header = None
             self.x = []
@@ -235,10 +238,11 @@ class BrukerData(object):
             with open(filename, mode='rb') as f:  # b is important -> binary
                 filecontent = f.read()
         except IOError as e:
-            print("I/O error({0}): {1}".format(e.errno, e.strerror))
+            raise Exception("I/O error({0}): {1}".format(e.errno, e.strerror))
 
         if b"RAW1.01" not in filecontent[0:8]:
             raise Exception("invalid file type must be RAW1.01")
+            #add other versions and gfrm
         return filecontent
 
     def get_range(self, pos):
@@ -247,9 +251,23 @@ class BrukerData(object):
         pos += rng.metta['header_len']
         rng.counts_data = []
         (typ, ) = struct.unpack('<I', self.filecontent[pos: pos+4])
-        if typ == 200:
-            # Check type of supplemental
+        # Check type of supplemental
+        if typ == 200:  # Area Detector Parameters
             rng.supmetta = self.get_metta(BrukerSupplementalHeader(), pos)
+        elif typ == 190:  # offset assigned by EVA
+            pass
+        elif typ == 150:  # removed data for search
+            pass
+        elif typ == 140:  # comment
+            pass
+        elif typ == 130:  # QCI parameters (obsolete)
+            pass
+        elif typ == 120:  # OQM parameters
+            pass
+        elif typ == 110:  # PSD parameters
+            pass
+        elif typ == 100:  # oscillation parameters
+            pass
         pos += rng.metta['sup_len']
         data_len = rng.metta['steps']
         for i in range(data_len):
@@ -296,8 +314,13 @@ class BrukerData(object):
         return x_out, y_out
 
     def get_index_xy(self, x, y):
+        """Assumes x and y are ordered arrays with len > 0"""
         y_out = np.abs(self.y-y).argmin()
+        if len(self.y) == 1 and y > self.y[0]:
+            y_out = 1
         x_out = np.abs(self.x-x).argmin()
+        if len(self.x) == 1 and x > self.x[0]:
+            x_out = 1
         return x_out, y_out
 
     def integrate_2d(self, area='all', axis='x'):
@@ -308,8 +331,7 @@ class BrukerData(object):
             y1 = 0
             (y2, x2) = self.smap.shape
         elif len(area) != 4:
-            print('area must be "all" or (x1, y1, x2, y2).')
-            raise
+            raise Exception('area must be "all" or (x1, y1, x2, y2).')
         else:
             x1, y1, x2, y2 = area
 
@@ -318,8 +340,7 @@ class BrukerData(object):
         elif axis == 'y':
             line = np.sum(self.smap[y1:y2, x1:x2], axis=1)  # psi
         else:
-            print('axis must be specified either "x" or "y".')
-            raise
+            raise Exception('axis must be specified either "x" or "y".')
         return line
 
     def get_metta(self, mettaclass, start_pos):
@@ -345,11 +366,9 @@ class BrukerData(object):
     def __add__(self, other):
         try:
             if not np.array_equal(self.y, other.y):
-                print('Must have same y scale')
-                raise
+                raise Exception('Must have same y scale')
         except:
-            print('Type mismatch, must be BrukerData')
-            raise
+            raise Exception('Type mismatch, must be BrukerData')
         ret = BrukerData()
         ret.y = self.y
         ret.smap = np.concatenate((self.smap, other.smap), axis=1)
