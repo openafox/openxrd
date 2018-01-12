@@ -20,14 +20,16 @@ from builtins import (
 
 import sys, os
 import numpy as np
-from data_analysis import get_datafiles
-from data_analysis import find_peaks_2d
-from data_analysis import find_peaks_1d
-from data_analysis import get_fit
-from data_analysis import get_fit_all_2d
-from data_analysis import get_fit_all_1d
-import data_analysis as DA
-from bruker_data import BrukerData
+from openxrd import get_datafiles
+from openxrd import find_peaks_2d
+from openxrd import find_peaks_1d
+from openxrd import get_fit
+from openxrd import get_fit_all_1d
+from openxrd import get_fit_all_2d
+from openxrd import fits_to_csv_multitype
+from openxrd import fit_data_to_csv
+from openxrd import BrukerData
+
 from datasetmetta import get_name_data
 
 import matplotlib.pyplot as plt
