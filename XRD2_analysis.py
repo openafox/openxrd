@@ -47,6 +47,7 @@ from lmfit import lineshapes
 
 def get_files():
     location = '/Users/towel/_The_Universe/_Materials_Engr/_Mat_Systems/_BNT_BKT/_CSD/_Data/EAPSI'
+    location = '.'
     files = get_datafiles(['*.raw'], location)
     return files
 
@@ -274,7 +275,7 @@ if __name__ == '__main__':
                     # Do fit
                     savename = os.path.join(directory, '%s_psi' % peaks[i])
                     if True:
-                        DA.fits_to_csv_multitype(
+                        fits_to_csv_multitype(
                                     x, y, name, savename,  mods,
                                     psi=True,
                                     extrahead=['comp', 'thick', 'num', 'volt'],
@@ -283,7 +284,7 @@ if __name__ == '__main__':
                                     print_out=False)
                     # Fit data to csv
                     if False:
-                        DA.fit_data_to_csv(x, y, name, savename, plot=False)
+                        fit_data_to_csv(x, y, name, savename, plot=False)
 
                 # 2th
                 if True:
@@ -296,7 +297,7 @@ if __name__ == '__main__':
                     # Do Fit
                     savename = os.path.join(directory, '%s_2th' % peaks[i])
                     if True:
-                        DA.fits_to_csv_multitype(
+                        fits_to_csv_multitype(
                                     x, y, name, savename,  mods,
                                     psi=False,
                                     extrahead=['comp', 'thick', 'num', 'volt'],
@@ -305,7 +306,7 @@ if __name__ == '__main__':
                                     print_out=False)
                     # Fit data to csv
                     if False:
-                        DA.fit_data_to_csv(x, y, name, savename, plot=False)
+                        fit_data_to_csv(x, y, name, savename, plot=False)
 
     """
     ## Plot in difrent ways ######################################

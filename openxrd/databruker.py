@@ -297,7 +297,7 @@ class BrukerSupp140(BrukerHeader):
         self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
-            'comment':       [None, 'comment',                  '??',  16],
+            'comment':       [None, 'comment',                  '??',   8],
             }
 
 
@@ -315,7 +315,6 @@ class BrukerSupp130(BrukerHeader):
             'length':        [None, 'record length',            '<I',   4],
             'var_type':      [None, 'variable type',            '<f',   8],
             'comp_name':     [None, 'ASCII:compound name',      '??',  12],
-            'ig_z':          [None, 'reserved for expansion',   '??',  20],
             }
 
 
@@ -425,23 +424,8 @@ class BrukerData(object):
         pos += rng.metta['header_len']
         rng.counts_data = []
         (typ, ) = struct.unpack('<I', self.filecontent[pos: pos+4])
-        # Check type of supplemental
-        if typ == 200:  # Area Detector Parameters
-            rng.supmetta = self.get_metta(BrukerSupp200(), pos)
-        elif typ == 190:  # offset assigned by EVA
-            rng.supmetta = self.get_metta(BrukerSupp190(), pos)
-        elif typ == 150:  # removed data for search
-            rng.supmetta = self.get_metta(BrukerSupp150(), pos)
-        elif typ == 140:  # comment
-            rng.supmetta = self.get_metta(BrukerSupp140(), pos)
-        elif typ == 130:  # QCI parameters (obsolete)
-            rng.supmetta = self.get_metta(BrukerSupp130(), pos)
-        elif typ == 120:  # OQM parameters
-            rng.supmetta = self.get_metta(BrukerSupp120(), pos)
-        elif typ == 110:  # PSD parameters
-            rng.supmetta = self.get_metta(BrukerSupp110(), pos)
-        elif typ == 100:  # oscillation parameters
-            rng.supmetta = self.get_metta(BrukerSupp100(), pos)
+        # use proper suppclass
+        rng.supmetta = self.get_metta(globals()["BrukerSupp"+ str(typ)](), pos)
         pos += rng.metta['sup_len']
         data_len = rng.metta['steps']
         for i in range(data_len):
@@ -529,6 +513,10 @@ class BrukerData(object):
                 bits = 4
             elif typ == '<d' or typ == '<Q' or typ == '<q':
                 bits = 8
+            elif typ == '??':
+                (mettaclass[key],) = struct.unpack('%ds' % typ,
+                            self.filecontent[pos: mettaclass['length']])
+                continue
             elif isinstance(typ, int):
                 (mettaclass[key],) = struct.unpack('%ds' % typ,
                             self.filecontent[pos: pos+typ])
