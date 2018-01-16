@@ -31,7 +31,7 @@ class BrukerHeader(object):
         # and (4) the data position in the group:
         # ordering index:
 
-        self.attrs = {
+        self._attrs = {
             'version':       [None, 'Version',                     4,   0],
             'head_1':        [None, 'head 1',                      4,   4],
             'file_status':   [None, 'File Status',              '<I',   8],
@@ -72,23 +72,41 @@ class BrukerHeader(object):
             'hard_dep':      [None, 'hard_dep',                    1, 711],
             }
 
+    def pos(self, key):
+        """return file position of a key"""
+        if key in self._attrs:
+            return self._attrs[key][3]
+        return None
+
+    def typ(self, key):
+        """return file type of a key"""
+        if key in self._attrs:
+            return self._attrs[key][2]
+        return None
+
+    def label(self, key):
+        """return file type of a key"""
+        if key in self._attrs:
+            return self._attrs[key][1]
+        return None
+
     def __getitem__(self, key):
-        if key in self.attrs:
-            return self.attrs[key][0]
+        if key in self._attrs:
+            return self._attrs[key][0]
         return None
 
     def __len__(self):
-        return len(self.attrs)
+        return len(self._attrs)
 
     def __setitem__(self, key, item):
-        if key in self.attrs:
-            self.attrs[key][0] = item
+        if key in self._attrs:
+            self._attrs[key][0] = item
         else:
-            self.attrs[key] = [item, key, len(self.attrs)]
+            self._attrs[key] = [item, key, len(self._attrs)]
 
     def __delitem__(self, key):
-        if key in self.attrs:
-            del self.attrs[key][0]
+        if key in self._attrs:
+            del self._attrs[key][0]
 
     def __iter__(self):
         self.index = -1
@@ -96,7 +114,7 @@ class BrukerHeader(object):
 
     def __next__(self):
         # Get items sorted in specified order:
-        keys = sorted(self.attrs, key=lambda key: self.attrs[key][3])
+        keys = sorted(self._attrs, key=lambda key: self._attrs[key][3])
         if self.index == len(keys) - 1:
             raise StopIteration
         self.index = self.index + 1
@@ -108,8 +126,8 @@ class BrukerHeader(object):
         https://stackoverflow.com/questions/1436703/difference-between-str-and-repr-in-python/2626364#2626364
         """
         out = ('{' +
-               '\n'.join('{:^20s}{:^20s}'.format(key, str(self.attrs[key][0]))
-               for key in self.attrs) + '}')
+               '\n'.join('{:^20s}{:^20s}'.format(key, str(self._attrs[key][0]))
+               for key in self._attrs) + '}')
         return out
 
     def copy(self):
@@ -123,20 +141,20 @@ class BrukerHeader(object):
     def __deepcopy__(self, memo):
         """.deepcopy()"""
         _head = BrukerHeader()
-        _head.attrs = self.attrs
+        _head._attrs = self._attrs
         return _head
 
     def __add__(self, other):
         try:
             # check if any keys overlap and raise exception if they do
-            same = [key for key in self.attrs if key in other.attrs]
+            same = [key for key in self._attrs if key in other._attrs]
             if same:
                 raise Exception('%s is in all header types')
         except:
             raise Exception('Type mismatch, must be BrukerHeader')
 
         _head = self.copy()
-        _head.attrs.update(other.attrs)
+        _head._attrs.update(other._attrs)
         return _head
 
 
@@ -149,7 +167,7 @@ class BrukerRangeHeader(BrukerHeader):
         # and (4) the data position in the group:
         # ordering index:
 
-        self.attrs = {
+        self._attrs = {
             'header_len':    [None, 'Header Len',               '<I',   0],
             'steps':         [None, 'Steps',                    '<I',   4],
             'start_theta':   [None, 'Start Theta',              '<d',   8],
@@ -215,7 +233,7 @@ class BrukerSupp200(BrukerHeader):
         # value, (2) a user-suitable label for the item, (3) the data type
         # and (4) the data position in the group:
         # ordering index:
-        self.attrs = {
+        self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
             'reserved':      [None, 'reserved',                 '<I',   8],
@@ -240,7 +258,7 @@ class BrukerSupp190(BrukerHeader):
         # value, (2) a user-suitable label for the item, (3) the data type
         # and (4) the data position in the group:
         # ordering index:
-        self.attrs = {
+        self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
             '2th_off':       [None, '2theta offset [deg]',      '<f',   8],
@@ -258,7 +276,7 @@ class BrukerSupp150(BrukerHeader):
         # value, (2) a user-suitable label for the item, (3) the data type
         # and (4) the data position in the group:
         # ordering index:
-        self.attrs = {
+        self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
             'ex_start':      [None, 'excld 2theta start [deg]', '<f',   8],
@@ -276,7 +294,7 @@ class BrukerSupp140(BrukerHeader):
         # value, (2) a user-suitable label for the item, (3) the data type
         # and (4) the data position in the group:
         # ordering index:
-        self.attrs = {
+        self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
             'comment':       [None, 'comment',                  '??',  16],
@@ -292,7 +310,7 @@ class BrukerSupp130(BrukerHeader):
         # value, (2) a user-suitable label for the item, (3) the data type
         # and (4) the data position in the group:
         # ordering index:
-        self.attrs = {
+        self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
             'var_type':      [None, 'variable type',            '<f',   8],
@@ -310,7 +328,7 @@ class BrukerSupp120(BrukerHeader):
         # value, (2) a user-suitable label for the item, (3) the data type
         # and (4) the data position in the group:
         # ordering index:
-        self.attrs = {
+        self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
             'ig_z':          [None, 'undefined',                '64',   8],
@@ -325,7 +343,7 @@ class BrukerSupp110(BrukerHeader):
         # value, (2) a user-suitable label for the item, (3) the data type
         # and (4) the data position in the group:
         # ordering index:
-        self.attrs = {
+        self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
             'goni_2th':      [None, '2theta of goni[deg]',      '<f',   8],
@@ -342,7 +360,7 @@ class BrukerSupp100(BrukerHeader):
         # value, (2) a user-suitable label for the item, (3) the data type
         # and (4) the data position in the group:
         # ordering index:
-        self.attrs = {
+        self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
             'osc_drv':       [None, 'oscillation drive',        '<f',   8],
@@ -502,8 +520,8 @@ class BrukerData(object):
     def get_metta(self, mettaclass, start_pos):
 
         for key in mettaclass:
-            pos = mettaclass.attrs[key][3]+start_pos
-            typ = mettaclass.attrs[key][2]
+            pos = mettaclass.pos(key)+start_pos
+            typ = mettaclass.typ(key)
             bits = 0
             if typ == '<h' or typ == '<H':
                 bits = 2
@@ -538,5 +556,6 @@ class BrukerData(object):
 
 
 if __name__ == '__main__':
-    pass
-
+    test = BrukerHeader()
+    for key in test:
+        print(test.label(key), test.pos(key), test.typ(key))
