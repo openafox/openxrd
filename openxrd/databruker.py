@@ -103,6 +103,42 @@ class BrukerHeader(object):
         key = keys[self.index]
         return key
 
+    def __str__(self):
+        """def what prints out
+        https://stackoverflow.com/questions/1436703/difference-between-str-and-repr-in-python/2626364#2626364
+        """
+        out = ('{' +
+               '\n'.join('{:^20s}{:^20s}'.format(key, str(self.attrs[key][0]))
+               for key in self.attrs) + '}')
+        return out
+
+    def copy(self):
+        """.copy() should always be a deepcopy."""
+        return self.__deepcopy__(None)
+
+    def __copy__(self):
+        """.copy() should always be a deepcopy."""
+        return self.__deepcopy__(None)
+
+    def __deepcopy__(self, memo):
+        """.deepcopy()"""
+        _head = BrukerHeader()
+        _head.attrs = self.attrs
+        return _head
+
+    def __add__(self, other):
+        try:
+            # check if any keys overlap and raise exception if they do
+            same = [key for key in self.attrs if key in other.attrs]
+            if same:
+                raise Exception('%s is in all header types')
+        except:
+            raise Exception('Type mismatch, must be BrukerHeader')
+
+        _head = self.copy()
+        _head.attrs.update(other.attrs)
+        return _head
+
 
 class BrukerRangeHeader(BrukerHeader):
     """Bruker Raw Header Dictonary"""
@@ -261,7 +297,7 @@ class BrukerSupp130(BrukerHeader):
             'length':        [None, 'record length',            '<I',   4],
             'var_type':      [None, 'variable type',            '<f',   8],
             'comp_name':     [None, 'ASCII:compound name',      '??',  12],
-            'ig_z':          [None, 'reserved for expansion',   '??',  ??],
+            'ig_z':          [None, 'reserved for expansion',   '??',  20],
             }
 
 
@@ -503,3 +539,4 @@ class BrukerData(object):
 
 if __name__ == '__main__':
     pass
+
