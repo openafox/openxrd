@@ -29,6 +29,7 @@ from openxrd import get_fit_all_2d
 from openxrd import fits_to_csv_multitype
 from openxrd import fit_data_to_csv
 from openxrd import BrukerData
+from openxrd import fit_multipeak
 
 from datasetmetta import get_name_data
 
@@ -47,7 +48,7 @@ from lmfit import lineshapes
 
 def get_files():
     location = '/Users/towel/_The_Universe/_Materials_Engr/_Mat_Systems/_BNT_BKT/_CSD/_Data/EAPSI'
-    location = '.'
+    # location = '.'
     files = get_datafiles(['*.raw'], location)
     return files
 
@@ -261,8 +262,9 @@ if __name__ == '__main__':
                 # should we use an integrated area or a slice of the data
                 integrate = True
                 # which models to use
-                mods = [models.Pearson7Model, models.VoigtModel,
-                        models.PseudoVoigtModel]
+                # mods = [models.Pearson7Model, models.VoigtModel,
+                #        models.PseudoVoigtModel]
+                mods = [models.PseudoVoigtModel]
                 # Psi
                 if False:
                     x = data.y[ys[i*3]:ys[i*3+1]]
@@ -282,6 +284,7 @@ if __name__ == '__main__':
                                     extra=get_name_data(name),
                                     plot=False, plot_all=False,
                                     print_out=False)
+
                     # Fit data to csv
                     if False:
                         fit_data_to_csv(x, y, name, savename, plot=False)
@@ -296,7 +299,7 @@ if __name__ == '__main__':
                         y = data.smap[ys[i*3+2], xs[i*3+1]:xs[i*3+2]]
                     # Do Fit
                     savename = os.path.join(directory, '%s_2th' % peaks[i])
-                    if True:
+                    if False:
                         fits_to_csv_multitype(
                                     x, y, name, savename,  mods,
                                     psi=False,
@@ -307,6 +310,9 @@ if __name__ == '__main__':
                     # Fit data to csv
                     if False:
                         fit_data_to_csv(x, y, name, savename, plot=False)
+                    # fit as multiple peaks
+                    if True:
+                        fit_multipeak(x, y, name, plot=True)
 
     """
     ## Plot in difrent ways ######################################

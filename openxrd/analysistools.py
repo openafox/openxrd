@@ -73,6 +73,7 @@ def find_peaks_1d(data, multi=0.01, add=5):
 def get_fit(x, y, plot=False, model=PseudoVoigtModel):
 
     ret = {}
+    #Make this into fit background using multifit method????
     # first zero background
     ret['y_min'] = y.min()
     y = y-ret['y_min']
@@ -184,6 +185,68 @@ def get_fit_all_1d(line, x_axis, position=None, maxs=None, plot=False):
         rets.append(ret)
 
     return rets
+
+
+def fit_multipeak(x, y,  name,
+                  models=[PseudoVoigtModel, PseudoVoigtModel],
+                  x_min=None, x_max=None,
+                  plot=False):
+    x_ = []
+    # set x min if secified
+    if x_min:
+        x_.append(np.abs(x-x_min).argmin())
+    else:
+        x_.append(0)
+
+    # get mid points
+    x_.append(np.argmax(y))
+    #step = int((x2 - x1)/len(models))
+    # set x max if secified
+    if x_max:
+        x_.append(np.abs(x-x_max).argmin())
+    else:
+        x_.append(len(x) - 1)
+
+    print(x_)
+
+    # Get the fits
+    for i, model in enumerate(models):
+        mod = model(prefix='mod_%d' % i)
+        #par = mod.guess(y[x1 + i * step: x1 + (i + 1) * step],
+        #                x=x[x1 + i * step: x1 + (i + 1) * step])
+        print(i)
+        par = mod.guess(y[x_[i]:x_[i+1]], x=x[x_[i]:x_[i+1]])
+        par['mod_%damplitude' % i].set(100, min=0.0)
+        if i < 1:
+            mods = mod
+            pars = par
+        else:
+            mods += mod
+            pars += par
+
+    out = mods.fit(y[x_[0]:x_[-1]], pars, x=x[x_[0]:x_[-1]])
+
+    print(out.fit_report(min_correl=0.5))
+
+    plt.plot(x[x_[0]:x_[-1]],
+             lmfit.lineshapes.pvoigt(x[x_[0]:x_[-1]],
+                                     out.params['mod_0amplitude'].value,
+                                     out.params['mod_0center'].value,
+                                     out.params['mod_0sigma'].value,
+                                     out.params['mod_0fraction'].value),
+             'g--')
+    plt.plot(x[x_[0]:x_[-1]],
+             lmfit.lineshapes.pvoigt(x[x_[0]:x_[-1]],
+                                     out.params['mod_1amplitude'].value,
+                                     out.params['mod_1center'].value,
+                                     out.params['mod_1sigma'].value,
+                                     out.params['mod_1fraction'].value),
+             'g--')
+    plt.plot(x[x_[0]:x_[-1]], y[x_[0]:x_[-1]], 'b')
+    plt.plot(x[x_[0]:x_[-1]], out.init_fit, 'k--')
+    plt.plot(x[x_[0]:x_[-1]], out.best_fit, 'r-')
+    # plt.savefig('../doc/_images/models_nistgauss2.png')
+    plt.show()
 
 
 def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
