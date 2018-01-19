@@ -279,15 +279,7 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
     if len(extrahead) != len(extra):
         raise  Exception('extrahead and extra must be of same length')
 
-    # set limits if secified
-    if x_min:
-        x1 = np.abs(x-x_min).argmin()
-    else:
-        x1 = 0
-    if x_max:
-        x2 = np.abs(x-x_max).argmin()
-    else:
-        x2 = len(x) - 1
+    x1, x2 = _set_bounds(x, y, x_min, x_max)
 
     fits = []
     mod_nms = []
@@ -361,15 +353,7 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
 def fit_data_to_csv(x, y,  name, savename,
                      x_min=None, x_max=None,
                      model=PseudoVoigtModel, plot=True):
-
-    if x_min:
-        x1 = np.abs(x-x_min).argmin()
-    else:
-        x1 = 0
-    if x_max:
-        x2 = np.abs(x-x_max).argmin()
-    else:
-        x2 = len(x) - 1
+    x1, x2 = _set_bounds(x, y, x_min, x_max)
 
     fit = get_fit(x[x1:x2], y[x1:x2], plot=plot, model=model)
 
