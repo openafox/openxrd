@@ -23,6 +23,7 @@ import scipy
 import scipy.ndimage as ndimage
 import scipy.ndimage.filters as filters
 from scipy.signal import argrelmax
+from scipy.signal import argrelmin
 
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
@@ -65,8 +66,14 @@ def find_peaks_2d(data):
 
 def find_peaks_1d(data, multi=0.01, add=5):
     neighbors = int(data.size * multi) + add
-    # print('neigh', neighbors)
+    print('neigh', neighbors)
     (x,) = argrelmax(data, order=neighbors)
+    return x
+
+def find_saddle_1d(data, multi=0.01, add=5):
+    neighbors = int(data.size * multi) + add
+    print('neigh', neighbors)
+    (x,) = argrelmin(data, order=neighbors)
     return x
 
 
@@ -192,34 +199,51 @@ def get_fit_all_1d(line, x_axis, position=None, maxs=None, plot=False):
     return rets
 
 
-def fit_multipeak(x, y,  name,
-                  models=[PseudoVoigtModel, PseudoVoigtModel],
-                  x_min=None, x_max=None,
-                  plot=False):
+def _set_bounds(x, y,  x_min, x_max, mids=None):
+    """Set bounds if they are specified.
+    Add mid bounds by finding:
+    Saddles - mids='sad'
+    Maximums - mids='max'
+    None - mids=None
+    """
     x_ = []
     # set x min if secified
     if x_min:
         x_.append(np.abs(x-x_min).argmin())
     else:
         x_.append(0)
-
     # get mid points
-    x_.append(np.argmax(y))
+    mid = []
+    if mids in 'saddle':
+        mid = find_saddle_1d(y)
+    elif mids in 'maximum':
+        mid = find_peaks_1d(y, 0.1)
+    elif isinstance(mids, list):
+        mid = mids
+    for pt in mid:
+        if len(x)*0.9 > pt > len(x)*0.1:
+            x_.append(pt)
     #step = int((x2 - x1)/len(models))
     # set x max if secified
     if x_max:
         x_.append(np.abs(x-x_max).argmin())
     else:
         x_.append(len(x) - 1)
+    return x_
 
-    print(x_)
+
+def fit_multipeak(x, y,  name,
+                  models=[PseudoVoigtModel, PseudoVoigtModel],
+                  x_min=None, x_max=None, mids='max',
+                  plot=False):
+
+    x_ = _set_bounds(x, y, x_min, x_max, mids=mids)
 
     # Get the fits
     for i, model in enumerate(models):
         mod = model(prefix='mod_%d' % i)
         #par = mod.guess(y[x1 + i * step: x1 + (i + 1) * step],
         #                x=x[x1 + i * step: x1 + (i + 1) * step])
-        print(i)
         par = mod.guess(y[x_[i]:x_[i+1]], x=x[x_[i]:x_[i+1]])
         par['mod_%damplitude' % i].set(100, min=0.0)
         if i < 1:
@@ -231,27 +255,20 @@ def fit_multipeak(x, y,  name,
 
     out = mods.fit(y[x_[0]:x_[-1]], pars, x=x[x_[0]:x_[-1]])
 
-    print(out.fit_report(min_correl=0.5))
-
-    plt.plot(x[x_[0]:x_[-1]],
-             lmfit.lineshapes.pvoigt(x[x_[0]:x_[-1]],
-                                     out.params['mod_0amplitude'].value,
-                                     out.params['mod_0center'].value,
-                                     out.params['mod_0sigma'].value,
-                                     out.params['mod_0fraction'].value),
-             'g--')
-    plt.plot(x[x_[0]:x_[-1]],
-             lmfit.lineshapes.pvoigt(x[x_[0]:x_[-1]],
-                                     out.params['mod_1amplitude'].value,
-                                     out.params['mod_1center'].value,
-                                     out.params['mod_1sigma'].value,
-                                     out.params['mod_1fraction'].value),
-             'g--')
-    plt.plot(x[x_[0]:x_[-1]], y[x_[0]:x_[-1]], 'b')
-    plt.plot(x[x_[0]:x_[-1]], out.init_fit, 'k--')
-    plt.plot(x[x_[0]:x_[-1]], out.best_fit, 'r-')
-    # plt.savefig('../doc/_images/models_nistgauss2.png')
-    plt.show()
+    if plot:
+        for i, model in enumerate(models):
+            plt.plot(x[x_[0]:x_[-1]], lmfit.lineshapes.pvoigt(
+                            x[x_[0]:x_[-1]],
+                            out.params['mod_%damplitude' % i].value,
+                            out.params['mod_%dcenter' % i].value,
+                            out.params['mod_%dsigma' % i].value,
+                            out.params['mod_%dfraction' % i].value),
+                      'g--')
+        plt.plot(x[x_[0]:x_[-1]], y[x_[0]:x_[-1]], 'b')
+        plt.plot(x[x_[0]:x_[-1]], out.init_fit, 'k--')
+        plt.plot(x[x_[0]:x_[-1]], out.best_fit, 'r-')
+        # plt.savefig('../doc/_images/models_nistgauss2.png')
+        plt.show()
 
 
 def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
