@@ -99,19 +99,24 @@ def get_fit(x, y, plot=False, model=PseudoVoigtModel):
             else:
                 ret[key[0:3]+'_error'] = 'N/A'
             i += 1
+    ret['r^2'] = calc_r_sqd(y, ret['fit'])
 
-    # https://www.mathworks.com/help/curvefit/evaluating-goodness-of-fit.html?s_tid=gn_loc_drop
-    SSe = np.sum((y - ret['fit'])**2.0)
-    SSt = np.sum((y - np.mean(y))**2.0)
-    ret['r^2'] = 1.0 - (SSe/SSt)
-    # https://stackoverflow.com/questions/14581358/getting-standard-errors-on-fitted-parameters-using-the-optimize-leastsq-method-i
-    # http://kitchingroup.cheme.cmu.edu/blog/2013/02/12/Nonlinear-curve-fitting-with-parameter-confidence-intervals/
-    # http://kitchingroup.cheme.cmu.edu/blog/2013/02/18/Nonlinear-curve-fitting-with-confidence-intervals/
     if plot:
         fig = plt.figure()
         out.plot(fig=fig)
         plt.show()
     return ret
+
+
+def calc_r_sqd(y, fit):
+    """ Calculate the R^2 for a curve fit. """
+    # https://www.mathworks.com/help/curvefit/evaluating-goodness-of-fit.html?s_tid=gn_loc_drop
+    # https://stackoverflow.com/questions/14581358/getting-standard-errors-on-fitted-parameters-using-the-optimize-leastsq-method-i
+    # http://kitchingroup.cheme.cmu.edu/blog/2013/02/12/Nonlinear-curve-fitting-with-parameter-confidence-intervals/
+    # http://kitchingroup.cheme.cmu.edu/blog/2013/02/18/Nonlinear-curve-fitting-with-confidence-intervals/
+    SSe = np.sum((y - fit)**2.0)
+    SSt = np.sum((y - np.mean(y))**2.0)
+    return 1.0 - (SSe/SSt)
 
 
 def div0(a, b):
