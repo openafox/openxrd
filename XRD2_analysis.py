@@ -23,7 +23,7 @@ import numpy as np
 from openxrd import get_datafiles
 from openxrd import find_peaks_2d
 from openxrd import find_peaks_1d
-from openxrd import get_fit
+from openxrd import fit_single
 from openxrd import get_fit_all_1d
 from openxrd import get_fit_all_2d
 from openxrd import fits_to_csv_multitype
@@ -205,7 +205,7 @@ if __name__ == '__main__':
                     xs[0], ys[0] = data.get_index_xy(46.79, -10)
                     xs[1], ys[1] = data.get_index_xy(41, 10)
                     xs[2], ys[2] = data.get_index_xy(53, 0)
-                    peaks.append('110_0')
+                    peaks.append('110')
                     xs[3], ys[3] = data.get_index_xy(32.5, -10)
                     xs[4], ys[4] = data.get_index_xy(27.5, 10)
                     xs[5], ys[5] = data.get_index_xy(37.5, 0)
@@ -216,11 +216,11 @@ if __name__ == '__main__':
                 # if specific to insitue tilted measurement
                 elif (data.y[0] < 45 < data.y[-1] and
                       data.x[0] < 32 < data.x[-1]):
-                    peaks.append('110')
+                    peaks.append('110_100')
                     xs[0], ys[0] = data.get_index_xy(32.56, 30)
                     xs[1], ys[1] = data.get_index_xy(30, 60)
                     xs[2], ys[2] = data.get_index_xy(35, 45)
-                    peaks.append('111')
+                    peaks.append('111_100')
                     xs[3], ys[3] = data.get_index_xy(40.12, 50)
                     xs[4], ys[4] = data.get_index_xy(38, 60)
                     xs[5], ys[5] = data.get_index_xy(40.5, 54.74)
@@ -317,10 +317,26 @@ if __name__ == '__main__':
                     # fit as multiple peaks
                     if True:
                     # compair these
-                        ret = get_fit(x, y, plot=True)
+                        ret = fit_single(x, y, plot=True)
                         print('single', ret['r^2'])
-                        ret = fit_multipeak(x, y, name, plot=True)
-                        print('multi', ret['r^2'])
+
+                        ret = fit_single(x, y, model=models.ExponentialModel, plot=True)
+                        z = y-ret['fit']
+                        ret = fit_single(x, z, plot=True)
+                        print('single', ret['r^2'])
+
+                        #ret = fit_multipeak(x, y, name, plot=True)
+                        #print('multi', ret['r^2'])
+                        ret = fit_multipeak(x, y, name,
+                                            models=[models.ExponentialModel,
+                                                    models.PseudoVoigtModel],
+                                            plot=True)
+                        print('multi2', ret['r^2'])
+                        ret = fit_multipeak(x, y, name,
+                                            models=[models.LinearModel,
+                                                    models.PseudoVoigtModel],
+                                            plot=True)
+                        print('multi2', ret['r^2'])
 
 
     """

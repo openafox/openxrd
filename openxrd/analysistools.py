@@ -28,6 +28,8 @@ from scipy.signal import argrelmin
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 
+import inspect
+
 
 def get_datafiles(supported_datafiles, location):
     """Qt file dialogue widget
@@ -46,9 +48,9 @@ def get_datafiles(supported_datafiles, location):
     return files
 
 
-def find_peaks_2d(data):
+def find_peaks_2d(data, neigh_multi=0.01, neigh_add=5):
 
-    neighborhood_size = data.size * 0.0001
+    neighborhood_size = int(data.size * neigh_multi) + neigh_add
     threshold = np.average(data) * 2  # 1500
     # print(neighborhood_size, threshold)
 
@@ -64,40 +66,48 @@ def find_peaks_2d(data):
     return xy
 
 
-def find_peaks_1d(data, multi=0.01, add=5):
-    neighbors = int(data.size * multi) + add
+def find_peaks_1d(data, neigh_multi=0.01, neigh_add=5):
+    neighbors = int(data.size * neigh_multi) + neigh_add
     print('neigh', neighbors)
     (x,) = argrelmax(data, order=neighbors)
     return x
 
-def find_saddle_1d(data, multi=0.01, add=5):
-    neighbors = int(data.size * multi) + add
+def find_saddle_1d(data, neigh_multi=0.01, neigh_add=5):
+    neighbors = int(data.size * neigh_multi) + neigh_add
     print('neigh', neighbors)
     (x,) = argrelmin(data, order=neighbors)
     return x
 
 
-def get_fit(x, y, plot=False, model=PseudoVoigtModel):
+def fit_single(x, y, plot=False, model=PseudoVoigtModel):
 
-    #Make this into fit background using multifit method????
-    # first zero background
-    y = y-y.min()
     # run model
     pars = model().guess(y, x=x)
     out = model().fit(y, pars, x=x)
-    # Get fit values - could also use out.params[param].value
-    # http://lmfit.github.io/lmfit-py/builtin_models.html#pseudovoigtmodel
+
     ret = _get_simple_out(x, y, out)
 
+    #if plot:
+    #    fig = plt.figure()
+    #    out.plot(fig=fig)
+    #    plt.show()
+
     if plot:
-        fig = plt.figure()
-        out.plot(fig=fig)
+        args = {key: out.best_values[key] for key in
+                inspect.getargspec(model().func)[0] if key is not 'x'}
+        plt.plot(x, model().func(x, **args), 'g--')
+        plt.plot(x, y, 'b')
+        plt.plot(x, out.init_fit, 'k--')
+        plt.plot(x, out.best_fit, 'r-')
+        # plt.savefig('../doc/_images/models_nistgauss2.png')
         plt.show()
     return ret
 
 
 def _get_simple_out(x, y, out):
     """make new version of out from lmfit"""
+    # Get fit values - could also use out.params[param].value
+    # http://lmfit.github.io/lmfit-py/builtin_models.html#pseudovoigtmodel
     ret = {}
     for key in out.params:
         ret[key] = out.params[key].value
@@ -248,11 +258,12 @@ def fit_multipeak(x, y,  name,
 
     # Get the fits
     for i, model in enumerate(models):
-        mod = model(prefix='mod_%d' % i)
+        mod = model(prefix='mod_%d_' % i)
         #par = mod.guess(y[x1 + i * step: x1 + (i + 1) * step],
         #                x=x[x1 + i * step: x1 + (i + 1) * step])
-        par = mod.guess(y[x_[i]:x_[i+1]], x=x[x_[i]:x_[i+1]])
-        par['mod_%damplitude' % i].set(100, min=0.0)
+        # par = mod.guess(y[x_[i]:x_[i+1]], x=x[x_[i]:x_[i+1]])
+        par = mod.guess(y, x=x)
+        #par['mod_%d_amplitude' % i].set(100, min=0.0)
         if i < 1:
             mods = mod
             pars = par
@@ -266,11 +277,11 @@ def fit_multipeak(x, y,  name,
         for i, model in enumerate(models):
             plt.plot(x[x_[0]:x_[-1]], lmfit.lineshapes.pvoigt(
                             x[x_[0]:x_[-1]],
-                            out.params['mod_%damplitude' % i].value,
-                            out.params['mod_%dcenter' % i].value,
-                            out.params['mod_%dsigma' % i].value,
-                            out.params['mod_%dfraction' % i].value),
-                      'g--')
+                            out.params['mod_%d_amplitude' % i].value,
+                            out.params['mod_%d_center' % i].value,
+                            out.params['mod_%d_sigma' % i].value,
+                            out.params['mod_%d_fraction' % i].value),
+                         'g--')
         plt.plot(x[x_[0]:x_[-1]], y[x_[0]:x_[-1]], 'b')
         plt.plot(x[x_[0]:x_[-1]], out.init_fit, 'k--')
         plt.plot(x[x_[0]:x_[-1]], out.best_fit, 'r-')
