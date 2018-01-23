@@ -275,13 +275,10 @@ def fit_multipeak(x, y,  name,
 
     if plot:
         for i, model in enumerate(models):
-            plt.plot(x[x_[0]:x_[-1]], lmfit.lineshapes.pvoigt(
-                            x[x_[0]:x_[-1]],
-                            out.params['mod_%d_amplitude' % i].value,
-                            out.params['mod_%d_center' % i].value,
-                            out.params['mod_%d_sigma' % i].value,
-                            out.params['mod_%d_fraction' % i].value),
-                         'g--')
+            args = {key: out.best_values['mod_%d_%s' % (i, key)] for key in
+                    inspect.getargspec(model().func)[0] if key is not 'x'}
+            plt.plot(x[x_[0]:x_[-1]], model().func(x[x_[0]:x_[-1]], **args),
+                     'g--')
         plt.plot(x[x_[0]:x_[-1]], y[x_[0]:x_[-1]], 'b')
         plt.plot(x[x_[0]:x_[-1]], out.init_fit, 'k--')
         plt.plot(x[x_[0]:x_[-1]], out.best_fit, 'r-')
