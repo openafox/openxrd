@@ -79,22 +79,33 @@ def find_saddle_1d(data, multi=0.01, add=5):
 
 def get_fit(x, y, plot=False, model=PseudoVoigtModel):
 
-    ret = {}
     #Make this into fit background using multifit method????
     # first zero background
-    ret['y_min'] = y.min()
-    y = y-ret['y_min']
+    y = y-y.min()
     # run model
     pars = model().guess(y, x=x)
     out = model().fit(y, pars, x=x)
     # Get fit values - could also use out.params[param].value
     # http://lmfit.github.io/lmfit-py/builtin_models.html#pseudovoigtmodel
+    ret = _get_simple_out(x, y, out)
+
+    if plot:
+        fig = plt.figure()
+        out.plot(fig=fig)
+        plt.show()
+    return ret
+
+
+def _get_simple_out(x, y, out):
+    """make new version of out from lmfit"""
+    ret = {}
     for key in out.params:
         ret[key] = out.params[key].value
-    ret.update({'height_obs': np.max(y),
-                'mid_obs': x[np.argmax(y)],
-                'fit': out.best_fit,
-                'full': out
+    ret.update({'height_obs':   np.max(y),
+                'y_min':        y.min(),
+                'mid_obs':      x[np.argmax(y)],
+                'fit':          out.best_fit,
+                'full':         out
                 })
     pcov = out.covar
     perror = []
@@ -108,10 +119,6 @@ def get_fit(x, y, plot=False, model=PseudoVoigtModel):
             i += 1
     ret['r^2'] = calc_r_sqd(y, ret['fit'])
 
-    if plot:
-        fig = plt.figure()
-        out.plot(fig=fig)
-        plt.show()
     return ret
 
 
@@ -228,7 +235,7 @@ def _set_bounds(x, y,  x_min, x_max, mids=None):
     if x_max:
         x_.append(np.abs(x-x_max).argmin())
     else:
-        x_.append(len(x) - 1)
+        x_.append(len(x))
     return x_
 
 
@@ -269,6 +276,11 @@ def fit_multipeak(x, y,  name,
         plt.plot(x[x_[0]:x_[-1]], out.best_fit, 'r-')
         # plt.savefig('../doc/_images/models_nistgauss2.png')
         plt.show()
+
+    ret = _get_simple_out(x, y, out)
+
+    return ret
+
 
 
 def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],

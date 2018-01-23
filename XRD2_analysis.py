@@ -205,10 +205,14 @@ if __name__ == '__main__':
                     xs[0], ys[0] = data.get_index_xy(46.79, -10)
                     xs[1], ys[1] = data.get_index_xy(41, 10)
                     xs[2], ys[2] = data.get_index_xy(53, 0)
+                    peaks.append('110_0')
+                    xs[3], ys[3] = data.get_index_xy(32.5, -10)
+                    xs[4], ys[4] = data.get_index_xy(27.5, 10)
+                    xs[5], ys[5] = data.get_index_xy(37.5, 0)
                     peaks.append('Pt111')
-                    xs[3], ys[3] = data.get_index_xy(39.76, -10)
-                    xs[4], ys[4] = data.get_index_xy(35, 10)
-                    xs[5], ys[5] = data.get_index_xy(45, 0)
+                    xs[6], ys[6] = data.get_index_xy(39.76, -10)
+                    xs[7], ys[7] = data.get_index_xy(35, 10)
+                    xs[8], ys[8] = data.get_index_xy(45, 0)
                 # if specific to insitue tilted measurement
                 elif (data.y[0] < 45 < data.y[-1] and
                       data.x[0] < 32 < data.x[-1]):
@@ -312,7 +316,12 @@ if __name__ == '__main__':
                         fit_data_to_csv(x, y, name, savename, plot=False)
                     # fit as multiple peaks
                     if True:
-                        fit_multipeak(x, y, name, plot=True)
+                    # compair these
+                        ret = get_fit(x, y, plot=True)
+                        print('single', ret['r^2'])
+                        ret = fit_multipeak(x, y, name, plot=True)
+                        print('multi', ret['r^2'])
+
 
     """
     ## Plot in difrent ways ######################################
