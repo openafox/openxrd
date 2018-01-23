@@ -115,7 +115,8 @@ def _get_simple_out(x, y, out):
                 'y_min':        y.min(),
                 'mid_obs':      x[np.argmax(y)],
                 'fit':          out.best_fit,
-                'full':         out
+                'full':         out,
+                'name':         out.model._name
                 })
     pcov = out.covar
     perror = []
@@ -289,6 +290,43 @@ def fit_multipeak(x, y,  name,
 
     return ret
 
+
+def fits_to_csv(fits, keys, extra_data, name, savename):
+    """Create CSV from fit report"""
+
+    for i, fit in enumerate(fits):
+        fit.update(extra_data[i])
+
+        # make table for csv (really a row unless adding header)
+        table = []
+        i = 0
+        if not os.path.exists(savename+'_newfits.csv'):
+            # Add headers
+            table = [keys]
+            i = 1
+            table.append([])
+        for j, key in enumerate(keys):
+            if key in 'name':
+                table[i].append(name + '-' + fit[key])
+                continue
+            elif key in fit:
+                table[i].append(fit[key])
+                continue
+            elif key in '2d':
+                col = chr(65+j)
+                table[i].append('=1.540598/(SIN(%s2*PI()/360))' % col)
+            elif key in '2d_error':
+                col = chr(65+j)
+                col2 = chr(65+j+1)
+                table[i].append('=0.192575*SIN(%s2*PI()/360)*1'
+                                '/SIN(%s2*PI()/360)^3*%s2*PI()/180'
+                                % (col, col, col2))
+            else:
+                raise Exception('specified csv header %s not found' % key)
+
+    with open(savename+'_newfits.csv', 'a') as f:
+        writer = csv.writer(f)
+        writer.writerows(table)
 
 
 def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],

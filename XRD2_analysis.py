@@ -30,6 +30,7 @@ from openxrd import fits_to_csv_multitype
 from openxrd import fit_data_to_csv
 from openxrd import BrukerData
 from openxrd import fit_multipeak
+from openxrd import fits_to_csv
 
 from datasetmetta import get_name_data
 
@@ -293,6 +294,13 @@ if __name__ == '__main__':
                     if False:
                         fit_data_to_csv(x, y, name, savename, plot=False)
 
+                csvheads = ['name', 'mid_obs', 'height_obs', 'comp', 'thick',
+                            'num', 'volt', 'center','cen_error',
+                            '2d', '2d_error', 'height', 'fwhm', 'sigma',
+                            'amplitude', 'sig_error', 'amp_error', 'r^2']
+                xdata = get_name_data(name)
+                extradata = {'comp': xdata[0], 'thick': xdata[1],
+                             'num': xdata[2], 'volt': xdata[3]}
                 # 2th
                 if True:
                     x = data.x[xs[i*3+1]:xs[i*3+2]]
@@ -319,6 +327,7 @@ if __name__ == '__main__':
                     # compair these
                         ret = fit_single(x, y, plot=True)
                         print('single', ret['r^2'])
+                        fits_to_csv([ret], csvheads, [extradata], name, savename)
 
                         ret = fit_single(x, y, model=models.ExponentialModel, plot=True)
                         z = y-ret['fit']
