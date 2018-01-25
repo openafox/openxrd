@@ -82,10 +82,11 @@ def find_saddle_1d(data, neigh_multi=0.01, neigh_add=5):
 def fit_single(x, y, plot=False, model=PseudoVoigtModel):
 
     # run model
-    pars = model().guess(y, x=x)
-    out = model().fit(y, pars, x=x)
+    mod = model(prefix='mod_0_')
+    pars = mod.guess(y, x=x)
+    out = mod.fit(y, pars, x=x)
 
-    ret = _get_simple_out(x, y, out)
+    out = _out_addtion(x, y, out)
 
     #if plot:
     #    fig = plt.figure()
@@ -93,44 +94,39 @@ def fit_single(x, y, plot=False, model=PseudoVoigtModel):
     #    plt.show()
 
     if plot:
-        args = {key: out.best_values[key] for key in
-                inspect.getargspec(model().func)[0] if key is not 'x'}
+        args = {key: out.best_values['mod_0_'+key] for key in
+                inspect.getargspec(mod.func)[0] if key is not 'x'}
         plt.plot(x, model().func(x, **args), 'g--')
         plt.plot(x, y, 'b')
         plt.plot(x, out.init_fit, 'k--')
         plt.plot(x, out.best_fit, 'r-')
         # plt.savefig('../doc/_images/models_nistgauss2.png')
         plt.show()
-    return ret
+    return out
 
 
-def _get_simple_out(x, y, out):
+def _out_addtion(x, y, out):
     """make new version of out from lmfit"""
     # Get fit values - could also use out.params[param].value
     # http://lmfit.github.io/lmfit-py/builtin_models.html#pseudovoigtmodel
-    ret = {}
+    out.report = {}
     for key in out.params:
-        ret[key] = out.params[key].value
-    ret.update({'height_obs':   np.max(y),
-                'y_min':        y.min(),
-                'mid_obs':      x[np.argmax(y)],
-                'fit':          out.best_fit,
-                'full':         out,
-                'name':         out.model._name
-                })
-    pcov = out.covar
-    perror = []
-    i = 0
-    for key in out.params.keys():
-        if 'fwhm' not in key and 'height' not in key and 'gamma' not in key:
-            if pcov is not None:
-                ret[key[0:3]+'_error'] = np.absolute(pcov[i][i])**0.5
-            else:
-                ret[key[0:3]+'_error'] = 'N/A'
-            i += 1
-    ret['r^2'] = calc_r_sqd(y, ret['fit'])
+        #print(key)
+        out.report[key] = out.params[key].value
+        if out.params[key].stderr is not None:
+            out.report[key+'_error'] = out.params[key].stderr
+        else:
+            out.report[key+'_error'] = 'N/A'
 
-    return ret
+    nm = out.model._reprstring(long=True)
+    nm = nm.replace("Model", "").replace("(", "").replace(")", "").split('+')
+    out.report['mods'] = nm
+    out.report['r^2'] = calc_r_sqd(y, out.best_fit)
+    out.report.update({'height_obs':   np.max(y),
+                       'y_min':        y.min(),
+                       'mid_obs':      x[np.argmax(y)],
+                        })
+    return out
 
 
 def calc_r_sqd(y, fit):
@@ -160,8 +156,8 @@ def get_fit_all_2d(datas, xy_raw, x_axis, y_axis, plot=False):
     for i, row in enumerate(xy_raw):
         oldline = line
         line = datas[int(row[0]), :]
-        ret = get_fit_all_1d(line, x_axis, row[1], plot)
-        out[i].append(ret[0]['fwhm'])
+        rets = get_fit_all_1d(line, x_axis, row[1], plot)
+        out[i].append(rets[0].params['fwhm'])
         """
             if xy_raw[j][0] == row[0]:  # get all on same line
                 group.append([x_axis[left:right], ret['fit']])
@@ -208,11 +204,8 @@ def get_fit_all_1d(line, x_axis, position=None, maxs=None, plot=False):
         if right - left < 4:
             right += 4 - (right - left)
 
-        if plot:
-            ret = get_fit(x_axis[left:right], line[left:right], True)
-        else:
-            ret = get_fit(x_axis[left:right], line[left:right], False)
-        rets.append(ret)
+        out = get_fit(x_axis[left:right], line[left:right], plot)
+        rets.append(out)
 
     return rets
 
@@ -252,33 +245,43 @@ def _set_bounds(x, y,  x_min, x_max, mids=None):
 
 def fit_multipeak(x, y,  name,
                   models=[PseudoVoigtModel, PseudoVoigtModel],
+                  background_mod=None,
                   x_min=None, x_max=None, mids='max',
                   plot=False):
 
     x_ = _set_bounds(x, y, x_min, x_max, mids=mids)
-
+    mod = []
     # Get the fits
     for i, model in enumerate(models):
-        mod = model(prefix='mod_%d_' % i)
+        mod.append(model(prefix='mod_%d_' % i))
         #par = mod.guess(y[x1 + i * step: x1 + (i + 1) * step],
         #                x=x[x1 + i * step: x1 + (i + 1) * step])
-        # par = mod.guess(y[x_[i]:x_[i+1]], x=x[x_[i]:x_[i+1]])
-        par = mod.guess(y, x=x)
-        #par['mod_%d_amplitude' % i].set(100, min=0.0)
+        par = mod[i].guess(y[x_[i]:x_[i+1]], x=x[x_[i]:x_[i+1]])
+        #par = mod.guess(y, x=x)
+        par['mod_%d_amplitude' % i].set(min=0.0)
         if i < 1:
-            mods = mod
+            mods = mod[i]
             pars = par
         else:
-            mods += mod
+            mods += mod[i]
             pars += par
 
+    if background_mod:
+        i += 1
+        mod.append(background_mod(prefix='mod_%d_' % i))
+        par = mod[i].guess(y, x=x)
+        mods += mod[i]
+        pars += par
+
     out = mods.fit(y[x_[0]:x_[-1]], pars, x=x[x_[0]:x_[-1]])
+    # save mods list
+    out = _out_addtion(x, y, out)
 
     if plot:
-        for i, model in enumerate(models):
+        for i, model in enumerate(mod):
             args = {key: out.best_values['mod_%d_%s' % (i, key)] for key in
-                    inspect.getargspec(model().func)[0] if key is not 'x'}
-            plt.plot(x[x_[0]:x_[-1]], model().func(x[x_[0]:x_[-1]], **args),
+                    inspect.getargspec(model.func)[0] if key is not 'x'}
+            plt.plot(x[x_[0]:x_[-1]], model.func(x[x_[0]:x_[-1]], **args),
                      'g--')
         plt.plot(x[x_[0]:x_[-1]], y[x_[0]:x_[-1]], 'b')
         plt.plot(x[x_[0]:x_[-1]], out.init_fit, 'k--')
@@ -286,47 +289,45 @@ def fit_multipeak(x, y,  name,
         # plt.savefig('../doc/_images/models_nistgauss2.png')
         plt.show()
 
-    ret = _get_simple_out(x, y, out)
-
-    return ret
+    return out
 
 
 def fits_to_csv(fits, keys, extra_data, name, savename):
     """Create CSV from fit report"""
-
-    for i, fit in enumerate(fits):
-        fit.update(extra_data[i])
-
-        # make table for csv (really a row unless adding header)
-        table = []
-        i = 0
-        if not os.path.exists(savename+'_newfits.csv'):
-            # Add headers
-            table = [keys]
-            i = 1
+    k = 0
+    for i, out in enumerate(fits):
+        out.report.update(extra_data[i])
+        table = [keys]
+        for j, modnm in enumerate(out.report['mods']):
+            mod = 'mod_%d_' % j
             table.append([])
-        for j, key in enumerate(keys):
-            if key in 'name':
-                table[i].append(name + '-' + fit[key])
-                continue
-            elif key in fit:
-                table[i].append(fit[key])
-                continue
-            elif key in '2d':
-                col = chr(65+j)
-                table[i].append('=1.540598/(SIN(%s2*PI()/360))' % col)
-            elif key in '2d_error':
-                col = chr(65+j)
-                col2 = chr(65+j+1)
-                table[i].append('=0.192575*SIN(%s2*PI()/360)*1'
-                                '/SIN(%s2*PI()/360)^3*%s2*PI()/180'
-                                % (col, col, col2))
-            else:
-                raise Exception('specified csv header %s not found' % key)
+            k += 1
+            for a, key in enumerate(keys):
+                if key in 'name':
+                    table[k].append(name)
+                elif key in 'model':
+                    table[k].append(modnm)
+                elif mod+key in out.report:
+                    table[k].append(out.report[mod+key])
+                elif key in out.report:
+                    table[k].append(out.report[key])
+                elif '2d_error' in key:
+                    col = chr(62+a)
+                    col2 = chr(62+a+1)
+                    table[k].append('=0.192575*SIN(%s2*PI()/360)*1'
+                                    '/SIN(%s2*PI()/360)^3*%s2*PI()/180'
+                                    % (col, col, col2))
+                elif '2d' in key:
+                    col = chr(63+a)
+                    table[k].append('=1.540598/(SIN(%s2*PI()/360))' % col)
+                else:
+                    table[k].append('N/A')
 
-    with open(savename+'_newfits.csv', 'a') as f:
-        writer = csv.writer(f)
-        writer.writerows(table)
+        if os.path.exists(savename+'_newfits.csv'):
+            table = table[1:]
+        with open(savename+'_newfits.csv', 'a') as f:
+            writer = csv.writer(f)
+            writer.writerows(table)
 
 
 def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
@@ -392,7 +393,7 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
     for j, mod_nm in enumerate(mod_nms):
         col = chr(65+3+j*4+len(extra))
         col2 = chr(65+4+j*4+len(extra))
-        table[i] += [fits[j]['center'], fits[j]['cen_error']]
+        table[i] += [fits[j]['center'], fits[j]['center_error']]
         if not psi:
             table[i] += ['=1.540598/(SIN(%s2*PI()/360))' % col,
                          '=0.192575*SIN(%s2*PI()/360)*1/SIN(%s2*PI()/360)^3*%s2*PI()/180'
@@ -400,7 +401,7 @@ def fits_to_csv_multitype(x, y,  name, savename, models=[PseudoVoigtModel],
     for j, mod_nm in enumerate(mod_nms):
         table[i] += [fits[j]['height'], fits[j]['fwhm'], fits[j]['amplitude']]
     for j, mod_nm in enumerate(mod_nms):
-        table[i] += [fits[j]['sig_error'], fits[j]['amp_error'],
+        table[i] += [fits[j]['sigma_error'], fits[j]['amplitude_error'],
                      fits[0]['r^2']]
 
     with open(savename+'fits.csv', 'a') as f:
