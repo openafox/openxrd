@@ -238,14 +238,14 @@ def _set_bounds(x, y,  x_min, x_max, mids=None, num=1):
     elif isinstance(mids, list):
         mid = mids
     # Only and make sure to include needed number of mid points
-    while num:
+    while num-1:
         val = sorted(mid)[len(mid)//2]
         x_.append(val)
         mid.remove(val)
         num += -1
         if not len(mid):
-            mid = [x_[0]+(x_[0]+x_[-1])/2]
-        x_.sort()
+            mid = [x_[0]+(x_[0]+x_[-1])//2]
+    x_.sort()
     return x_
 
 
