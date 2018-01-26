@@ -68,15 +68,15 @@ def find_peaks_2d(data, neigh_multi=0.01, neigh_add=5):
 
 def find_peaks_1d(data, neigh_multi=0.01, neigh_add=5):
     neighbors = int(data.size * neigh_multi) + neigh_add
-    print('neigh', neighbors)
+    # print('neigh', neighbors)
     (x,) = argrelmax(data, order=neighbors)
-    return x
+    return x.tolist()
 
 def find_saddle_1d(data, neigh_multi=0.01, neigh_add=5):
     neighbors = int(data.size * neigh_multi) + neigh_add
-    print('neigh', neighbors)
+    # print('neigh', neighbors)
     (x,) = argrelmin(data, order=neighbors)
-    return x
+    return x.tolist()
 
 
 def fit_single(x, y, plot=False, model=PseudoVoigtModel):
@@ -210,7 +210,7 @@ def get_fit_all_1d(line, x_axis, position=None, maxs=None, plot=False):
     return rets
 
 
-def _set_bounds(x, y,  x_min, x_max, mids=None):
+def _set_bounds(x, y,  x_min, x_max, mids=None, num=1):
     """Set bounds if they are specified.
     Add mid bounds by finding:
     Saddles - mids='sad'
@@ -223,6 +223,12 @@ def _set_bounds(x, y,  x_min, x_max, mids=None):
         x_.append(np.abs(x-x_min).argmin())
     else:
         x_.append(0)
+    # set x max if secified
+    if x_max:
+        x_.append(np.abs(x-x_max).argmin())
+    else:
+        x_.append(len(x))
+
     # get mid points
     mid = []
     if mids in 'saddle':
@@ -231,15 +237,15 @@ def _set_bounds(x, y,  x_min, x_max, mids=None):
         mid = find_peaks_1d(y, 0.1)
     elif isinstance(mids, list):
         mid = mids
-    for pt in mid:
-        if len(x)*0.9 > pt > len(x)*0.1:
-            x_.append(pt)
-    #step = int((x2 - x1)/len(models))
-    # set x max if secified
-    if x_max:
-        x_.append(np.abs(x-x_max).argmin())
-    else:
-        x_.append(len(x))
+    # Only and make sure to include needed number of mid points
+    while num:
+        val = sorted(mid)[len(mid)//2]
+        x_.append(val)
+        mid.remove(val)
+        num += -1
+        if not len(mid):
+            mid = [x_[0]+(x_[0]+x_[-1])/2]
+        x_.sort()
     return x_
 
 
@@ -249,7 +255,8 @@ def fit_multipeak(x, y,  name,
                   x_min=None, x_max=None, mids='max',
                   plot=False):
 
-    x_ = _set_bounds(x, y, x_min, x_max, mids=mids)
+    x_ = _set_bounds(x, y, x_min, x_max, mids=mids, num=len(models))
+
     mod = []
     # Get the fits
     for i, model in enumerate(models):
@@ -294,8 +301,8 @@ def fit_multipeak(x, y,  name,
 
 def fits_to_csv(fits, keys, extra_data, name, savename):
     """Create CSV from fit report"""
-    k = 0
     for i, out in enumerate(fits):
+        k = 0
         out.report.update(extra_data[i])
         table = [keys]
         for j, modnm in enumerate(out.report['mods']):
