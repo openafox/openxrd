@@ -22,8 +22,7 @@ import lmfit
 import scipy
 import scipy.ndimage as ndimage
 import scipy.ndimage.filters as filters
-from scipy.signal import argrelmax
-from scipy.signal import argrelmin
+from scipy.signal import argrelextrema
 
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
@@ -69,13 +68,13 @@ def find_peaks_2d(data, neigh_multi=0.01, neigh_add=5):
 def find_peaks_1d(data, neigh_multi=0.01, neigh_add=5):
     neighbors = int(data.size * neigh_multi) + neigh_add
     # print('neigh', neighbors)
-    (x,) = argrelmax(data, order=neighbors)
+    (x,) = argrelextrema(data, np.greater_equal, order=neighbors)
     return x.tolist()
 
 def find_saddle_1d(data, neigh_multi=0.01, neigh_add=5):
     neighbors = int(data.size * neigh_multi) + neigh_add
     # print('neigh', neighbors)
-    (x,) = argrelmin(data, order=neighbors)
+    (x,) = argrelextrema(data, np.less_equal, order=neighbors)
     return x.tolist()
 
 
@@ -280,7 +279,7 @@ def fit_multipeak(x, y,  name,
         mods += mod[i]
         pars += par
 
-    out = mods.fit(y[x_[0]:x_[-1]], pars, x=x[x_[0]:x_[-1]])
+    out = mods.fit(y[x_[0]:x_[-1]], pars, x=x[x_[0]:x_[-1]])#, nan_policy='omit')
     # save mods list
     out = _out_addtion(x, y, out)
 
