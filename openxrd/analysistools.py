@@ -236,6 +236,8 @@ def _set_bounds(x, y,  x_min, x_max, mids=None, num=1):
         mid = find_peaks_1d(y, 0.1)
     elif isinstance(mids, list):
         mid = mids
+    # remove edges to prevent 0 len array errors
+    mid = [i for i in mid if i not in x_]
     # Only and make sure to include needed number of mid points
     while num-1:
         val = sorted(mid)[(len(mid)-1)//2]
