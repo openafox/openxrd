@@ -238,7 +238,7 @@ def _set_bounds(x, y,  x_min, x_max, mids=None, num=1):
         mid = mids
     # Only and make sure to include needed number of mid points
     while num-1:
-        val = sorted(mid)[len(mid)//2]
+        val = sorted(mid)[(len(mid)-1)//2]
         x_.append(val)
         mid.remove(val)
         num += -1
@@ -274,18 +274,26 @@ def fit_multipeak(x, y,  name,
 
     if background_mod:
         i += 1
-        mod.append(background_mod(prefix='mod_%d_' % i))
+        if 'Poly' in background_mod.__name__:
+            mod.append(background_mod(5, prefix='mod_%d_' % i))
+        else:
+            mod.append(background_mod(prefix='mod_%d_' % i))
         par = mod[i].guess(y, x=x)
         mods += mod[i]
         pars += par
 
-    out = mods.fit(y[x_[0]:x_[-1]], pars, x=x[x_[0]:x_[-1]])#, nan_policy='omit')
+    out = mods.fit(y[x_[0]:x_[-1]], pars, x=x[x_[0]:x_[-1]], nan_policy='omit')
     # save mods list
     out = _out_addtion(x, y, out)
+    if background_mod:
+        if 'Poly' in background_mod.__name__:
+            # account for other poly cases
+            out.report['mod_%d_c6' % i] = 0
+            out.report['mod_%d_c7' % i] = 0
 
     if plot:
         for i, model in enumerate(mod):
-            args = {key: out.best_values['mod_%d_%s' % (i, key)] for key in
+            args = {key: out.report['mod_%d_%s' % (i, key)] for key in
                     inspect.getargspec(model.func)[0] if key is not 'x'}
             plt.plot(x[x_[0]:x_[-1]], model.func(x[x_[0]:x_[-1]], **args),
                      'g--')
