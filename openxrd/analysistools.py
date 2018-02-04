@@ -454,12 +454,7 @@ def csv_append_col(filename, column, len_policy="ls"):
     require the exact lengths 'not l or s' as the table in the file.
     'ls' or 'sl' is also valid.
     """
-    if not isinstance(column, list):
-        if isinstance(column, np.ndarray):
-            column = column.tolist()
-        else:
-            raise TypeError("column must be python list or numpy.ndarray")
-
+    column = _check_array(column)
     if not '.csv' in filename[-4:]:
         filename += '.csv'
     if os.path.exists(filename):
@@ -504,6 +499,14 @@ def num_cols(array):
         return len(array[0])
     return 1
 
+def _check_array(array):
+    """Check if python list"""
+    if not isinstance(array, list):
+        if isinstance(array, np.ndarray):
+            array = array.tolist()
+        else:
+            raise TypeError("input must be python list or numpy.ndarray")
+    return array
 
 def fits_to_csv_autopeaks(x, y, savename):
     maxs = find_peaks_1d(y, 0.20)
