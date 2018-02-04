@@ -233,11 +233,12 @@ def _set_bounds(x, y,  x_min, x_max, mids=None, num=1):
     if mids in 'saddle':
         mid = find_saddle_1d(y)
     elif mids in 'maximum':
-        mid = find_peaks_1d(y, 0.1)
+        mid = find_peaks_1d(y, 0.15)
     elif isinstance(mids, list):
         mid = mids
-    # remove edges to prevent 0 len array errors
-    mid = [i for i in mid if i not in x_]
+    # Remove edges from mid to prevent 0 array len errors
+    mid = [i for i in mid if (abs(i-x_[0])>10 and abs(i-x_[-1])>10)]
+    # print(mid)
     # Only and make sure to include needed number of mid points
     while num-1:
         val = sorted(mid)[(len(mid)-1)//2]
@@ -247,6 +248,7 @@ def _set_bounds(x, y,  x_min, x_max, mids=None, num=1):
         if not len(mid):
             mid = [x_[0]+(x_[0]+x_[-1])//2]
     x_.sort()
+    # print(x_)
     return x_
 
 
@@ -266,7 +268,7 @@ def fit_multipeak(x, y,  name,
         #                x=x[x1 + i * step: x1 + (i + 1) * step])
         par = mod[i].guess(y[x_[i]:x_[i+1]], x=x[x_[i]:x_[i+1]])
         #par = mod.guess(y, x=x)
-        par['mod_%d_amplitude' % i].set(min=0.0)
+        par['mod_%d_amplitude' % i].set(min=1.e-13)
         if i < 1:
             mods = mod[i]
             pars = par
