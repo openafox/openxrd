@@ -31,6 +31,7 @@ from openxrd import fit_data_to_csv
 from openxrd import BrukerData
 from openxrd import fit_multipeak
 from openxrd import fits_to_csv
+from openxrd import csv_append_col
 
 from datasetmetta import get_name_data
 
@@ -348,7 +349,17 @@ if __name__ == '__main__':
                         #fits_to_csv([o for o in out], csvheads,
                         #            [extradata, extradata, extradata],
                         #            name, savename)
-
+                        # Add data to csv
+                        fn = directory + 'fitdata'
+                        csv_append_col(fn, [name + '_y'] + y[x1:x2])
+                        csv_append_col(fn, [name + '_x'] + y[x1:x2])
+                        csv_append_col(fn, [name + '_fit'] + out.best_fit)
+                        for i, model in enumerate(out.report['mod']):
+                            args = {key: out.report['mod_%d_%s' % (i, key)]
+                                    for key in inspect.getargspec(model.func)[0]
+                                    if key is not 'x'}
+                            csv_append_col(fn, [name + '_f%d' %i] +
+                                           model.func(x, **args))
 
 
     """
