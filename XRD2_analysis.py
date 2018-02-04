@@ -196,64 +196,64 @@ if __name__ == '__main__':
         if True:
             # insitue data
             if True:
-                xs = [0]*9
-                ys = [0]*9
+                pos = []
                 peaks = []
                 # if specific to insitue flat measurement
                 if (data.y[0] < 0 < data.y[-1] and
                         data.x[0] < 46 < data.x[-1]):
                     peaks.append('200')
-                    xs[0], ys[0] = data.get_index_xy(46.79, -10)
-                    xs[1], ys[1] = data.get_index_xy(41, 10)
-                    xs[2], ys[2] = data.get_index_xy(53, 0)
+                    pos.append(data.get_index_xy(46.79, -10))
+                    pos.append(data.get_index_xy(41, 10))
+                    pos.append(data.get_index_xy(53, 0))
+                    """
                     peaks.append('110')
-                    xs[3], ys[3] = data.get_index_xy(32.5, -10)
-                    xs[4], ys[4] = data.get_index_xy(27.5, 10)
-                    xs[5], ys[5] = data.get_index_xy(37.5, 0)
+                    pos.append(data.get_index_xy(32.5, -10))
+                    pos.append(data.get_index_xy(30, 10))
+                    pos.append(data.get_index_xy(34, 0))
                     peaks.append('Pt111')
-                    xs[6], ys[6] = data.get_index_xy(39.76, -10)
-                    xs[7], ys[7] = data.get_index_xy(35, 10)
-                    xs[8], ys[8] = data.get_index_xy(45, 0)
+                    pos.append(data.get_index_xy(39.76, -10))
+                    pos.append(data.get_index_xy(35, 10))
+                    pos.append(data.get_index_xy(45, 0))
+                    """
                 # if specific to insitue tilted measurement
                 elif (data.y[0] < 45 < data.y[-1] and
                       data.x[0] < 32 < data.x[-1]):
                     peaks.append('110_100')
-                    xs[0], ys[0] = data.get_index_xy(32.56, 30)
-                    xs[1], ys[1] = data.get_index_xy(30, 60)
-                    xs[2], ys[2] = data.get_index_xy(35, 45)
+                    pos.append(data.get_index_xy(32.56, 30))
+                    pos.append(data.get_index_xy(30, 60))
+                    pos.append(data.get_index_xy(35, 45))
                     peaks.append('111_100')
-                    xs[3], ys[3] = data.get_index_xy(40.12, 50)
-                    xs[4], ys[4] = data.get_index_xy(38, 60)
-                    xs[5], ys[5] = data.get_index_xy(40.5, 54.74)
-                    #xs[4], ys[4] = data.get_index_xy(35, 60)
-                    #xs[5], ys[5] = data.get_index_xy(45, 54.74)
+                    pos.append(data.get_index_xy(40.12, 50))
+                    pos.append(data.get_index_xy(38, 60))
+                    pos.append(data.get_index_xy(40.5, 54.74))
+                    #pos.append(data.get_index_xy(35, 60))
+                    #pos.append(data.get_index_xy(45, 54.74))
                     peaks.append('Pt200_111')
-                    xs[6], ys[6] = data.get_index_xy(46.24, 45)
-                    xs[7], ys[7] = data.get_index_xy(42, 65)
-                    xs[8], ys[8] = data.get_index_xy(50, 54.74)
+                    pos.append(data.get_index_xy(46.24, 45))
+                    pos.append(data.get_index_xy(42, 65))
+                    pos.append(data.get_index_xy(50, 54.74))
             # Si
             if False:
-                xs = [0]*3
-                ys = [0]*3
+                pos = []
                 peaks = []
                 # if specific to insitue flat measurement
                 peaks.append('Si_400')
-                xs[0], ys[0] = data.get_index_xy(69.132, -10)
-                xs[1], ys[1] = data.get_index_xy(68, 10)
-                xs[2], ys[2] = data.get_index_xy(72, 0)
+                pos.append(data.get_index_xy(69.132, -10))
+                pos.append(data.get_index_xy(68, 10))
+                pos.append(data.get_index_xy(72, 0))
             # full map data
             if False:
                 peakfile = os.path.join(os.path.dirname(__file__),
                                         'BNKT_peaks.csv')
                 ## make peak file auto creat arrays as below
                 peak = '100'
-                x1, y1 = data.get_index_xy(22.93, -10)
-                x2, y2 = data.get_index_xy(17, 10)
-                x3, y3 = data.get_index_xy(29, 0)
+                pos.append(data.get_index_xy(22.93, -10))
+                pos.append(data.get_index_xy(17, 10))
+                pos.append(data.get_index_xy(29, 0))
                 peak = '110'
-                x1, y1 = data.get_index_xy(32.56, -10)
-                x2, y2 = data.get_index_xy(30, 80)
-                x3, y3 = data.get_index_xy(35, 45)
+                pos.append(data.get_index_xy(32.56, -10))
+                pos.append(data.get_index_xy(30, 80))
+                pos.append(data.get_index_xy(35, 45))
 
             smapT = data.smap.copy().T
             lines = []
@@ -272,12 +272,13 @@ if __name__ == '__main__':
                 mods = [models.PseudoVoigtModel]
                 # Psi
                 if False:
-                    x = data.y[ys[i*3]:ys[i*3+1]]
+                    x = data.y[pos[i*3][1]:pos[i*3+1][1]]
                     if integrate:
-                        y = data.integrate_2d([xs[i*3+1], ys[i*3], xs[i*3+2],
-                                               ys[i*3+1]], 'y')
+                        y = data.integrate_2d([pos[i*3+1][0], pos[i*3][1],
+                                               pos[i*3+2][0], pos[i*3+1][1]],
+                                               'y')
                     else:
-                        y = smapT[xs[i*3], ys[i*3]:ys[i*3+1]]
+                        y = smapT[pos[i*3][0], pos[i*3][1]:pos[i*3+1][1]]
 
                     # Do fit
                     savename = os.path.join(directory, '%s_psi' % peaks[i])
@@ -294,21 +295,23 @@ if __name__ == '__main__':
                     if False:
                         fit_data_to_csv(x, y, name, savename, plot=False)
 
-                csvheads = ['name', 'mid_obs', 'height_obs', 'comp', 'thick',
-                            'num', 'volt', 'center','cen_error',
+                csvheads = ['name', 'model',  'mid_obs', 'height_obs', 'comp',
+                            'thick', 'num', 'volt', 'center','center_error',
                             '2d', '2d_error', 'height', 'fwhm', 'sigma',
-                            'amplitude', 'sig_error', 'amp_error', 'r^2']
+                            'amplitude', 'sigma_error', 'amplitude_error',
+                            'r^2', 'decay', 'slope', 'intercept']
                 xdata = get_name_data(name)
                 extradata = {'comp': xdata[0], 'thick': xdata[1],
                              'num': xdata[2], 'volt': xdata[3]}
                 # 2th
                 if True:
-                    x = data.x[xs[i*3+1]:xs[i*3+2]]
+                    x = data.x[pos[i*3+1][0]:pos[i*3+2][0]]
                     if integrate:
-                        y = data.integrate_2d([xs[i*3+1], ys[i*3], xs[i*3+2],
-                                               ys[i*3+1]], 'x')
+                        y = data.integrate_2d([pos[i*3+1][0], pos[i*3][1],
+                                               pos[i*3+2][0], pos[i*3+1][1]],
+                                               'x')
                     else:
-                        y = data.smap[ys[i*3+2], xs[i*3+1]:xs[i*3+2]]
+                        y = data.smap[pos[i*3+2][1], pos[i*3+1][0]:pos[i*3+2][0]]
                     # Do Fit
                     savename = os.path.join(directory, '%s_2th' % peaks[i])
                     if False:
@@ -325,27 +328,27 @@ if __name__ == '__main__':
                     # fit as multiple peaks
                     if True:
                     # compair these
-                        ret = fit_single(x, y, plot=True)
-                        print('single', ret['r^2'])
-                        fits_to_csv([ret], csvheads, [extradata], name, savename)
-
-                        ret = fit_single(x, y, model=models.ExponentialModel, plot=True)
-                        z = y-ret['fit']
-                        ret = fit_single(x, z, plot=True)
-                        print('single', ret['r^2'])
-
-                        #ret = fit_multipeak(x, y, name, plot=True)
-                        #print('multi', ret['r^2'])
-                        ret = fit_multipeak(x, y, name,
-                                            models=[models.ExponentialModel,
+                        out = []
+                        rsqd = []
+                        """
+                        print('single')
+                        out.append(fit_single(x, y, plot=False))
+                        print('single poly')
+                        out.append(fit_multipeak(x, y, name,
+                                            models=[models.PseudoVoigtModel],
+                                            background_mod=models.PolynomialModel,
+                                            plot=False))
+                        """
+                        print('double poly')
+                        out.append(fit_multipeak(x, y, name,
+                                            models=[models.PseudoVoigtModel,
                                                     models.PseudoVoigtModel],
-                                            plot=True)
-                        print('multi2', ret['r^2'])
-                        ret = fit_multipeak(x, y, name,
-                                            models=[models.LinearModel,
-                                                    models.PseudoVoigtModel],
-                                            plot=True)
-                        print('multi2', ret['r^2'])
+                                            background_mod=models.PolynomialModel,
+                                            plot=True))
+                        #fits_to_csv([o for o in out], csvheads,
+                        #            [extradata, extradata, extradata],
+                        #            name, savename)
+
 
 
     """
