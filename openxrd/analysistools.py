@@ -289,6 +289,7 @@ def fit_multipeak(x, y,  name,
     out = mods.fit(y[x_[0]:x_[-1]], pars, x=x[x_[0]:x_[-1]], nan_policy='omit')
     # save mods list
     out = _out_addtion(x, y, out)
+    out.report['mod'] = mod
     if background_mod:
         if 'Poly' in background_mod.__name__:
             # account for other poly cases
