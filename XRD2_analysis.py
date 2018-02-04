@@ -20,6 +20,7 @@ from builtins import (
 
 import sys, os
 import numpy as np
+import inspect
 from openxrd import get_datafiles
 from openxrd import find_peaks_2d
 from openxrd import find_peaks_1d
@@ -219,6 +220,7 @@ if __name__ == '__main__':
                 # if specific to insitue tilted measurement
                 elif (data.y[0] < 45 < data.y[-1] and
                       data.x[0] < 32 < data.x[-1]):
+                    """
                     peaks.append('110_100')
                     pos.append(data.get_index_xy(32.56, 30))
                     pos.append(data.get_index_xy(30, 60))
@@ -233,6 +235,7 @@ if __name__ == '__main__':
                     pos.append(data.get_index_xy(46.24, 45))
                     pos.append(data.get_index_xy(42, 65))
                     pos.append(data.get_index_xy(50, 54.74))
+                    """
             # Si
             if False:
                 pos = []
@@ -345,21 +348,22 @@ if __name__ == '__main__':
                                             models=[models.PseudoVoigtModel,
                                                     models.PseudoVoigtModel],
                                             background_mod=models.PolynomialModel,
-                                            plot=True))
+                                            plot=False))
                         #fits_to_csv([o for o in out], csvheads,
                         #            [extradata, extradata, extradata],
                         #            name, savename)
                         # Add data to csv
-                        fn = directory + 'fitdata'
-                        csv_append_col(fn, [name + '_y'] + y[x1:x2])
-                        csv_append_col(fn, [name + '_x'] + y[x1:x2])
-                        csv_append_col(fn, [name + '_fit'] + out.best_fit)
-                        for i, model in enumerate(out.report['mod']):
-                            args = {key: out.report['mod_%d_%s' % (i, key)]
+                        fn = os.path.join(directory, 'fitdata')
+                        csv_append_col(fn, [name + '_x'] + x.tolist())
+                        csv_append_col(fn, [name + '_y'] + y.tolist())
+                        csv_append_col(fn, [name + '_fit'] +
+                                       out[0].best_fit.tolist())
+                        for i, model in enumerate(out[0].report['mod']):
+                            args = {key: out[0].report['mod_%d_%s' % (i, key)]
                                     for key in inspect.getargspec(model.func)[0]
                                     if key is not 'x'}
                             csv_append_col(fn, [name + '_f%d' %i] +
-                                           model.func(x, **args))
+                                           model.func(x, **args).tolist())
 
 
     """
