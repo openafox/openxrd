@@ -490,7 +490,10 @@ def csv_append_col(filename, column, len_policy="ls"):
                 table = [row + column[j] for j, row in enumerate(filetable)]
 
     else:
-        table = column
+        if isinstance(column[0], list):
+            table = column
+        else:
+            table = zip(column)
     with open(filename, 'w') as f:
         writer = csv.writer(f)
         writer.writerows(table)
