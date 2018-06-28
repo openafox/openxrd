@@ -422,16 +422,20 @@ class BrukerData(object):
         rng.metta = self.get_metta(BrukerRangeHeader(), pos)
         pos += rng.metta['header_len']
         rng.counts_data = []
-        (typ, ) = struct.unpack('<I', self.filecontent[pos: pos+4])
-        print('typ', pos, typ)
-        # use proper suppclass
-        rng.supmetta = self.get_metta(globals()["BrukerSupp"+ str(typ)](), pos)
+        if rng.metta['sup_len'] > 0:
+            (typ, ) = struct.unpack('<I', self.filecontent[pos: pos+4])
+            print(pos, 'typ', typ)
+            # use proper suppclass
+            rng.supmetta = self.get_metta(globals()["BrukerSupp"+ str(typ)](), pos)
+        else:
+            rng.supmetta = {'type': None,}
+
         pos += rng.metta['sup_len']
         data_len = rng.metta['steps']
         for i in range(data_len):
             (ret,) = struct.unpack('<f', self.filecontent[pos+i*4: pos+i*4+4])
             rng.counts_data.append(ret)
-        print('ret',pos,  ret)
+        print(pos, 'ret', ret)
         pos += data_len * 4
         return rng, pos
 
@@ -529,7 +533,7 @@ class BrukerData(object):
                 typ = bits
 
             mettaclass[key] = self._unpack(self.filecontent, pos, typ, bits)
-            print(key, pos, mettaclass[key])
+            print(pos - 712, key, mettaclass[key])
         return mettaclass
 
     def __add__(self, other):
