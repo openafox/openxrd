@@ -262,7 +262,7 @@ class BrukerSupp190(BrukerHeader):
             'length':        [None, 'record length',            '<I',   4],
             '2th_off':       [None, '2theta offset [deg]',      '<f',   8],
             'int_off':       [None, 'intensity offset [% max]', '<f',  12],
-            'ig_z':          [None, 'reserved for expansion',   '16',  16],
+            'ig_z':          [None, 'reserved for expansion',     16,  16],
             }
 
 
@@ -280,7 +280,7 @@ class BrukerSupp150(BrukerHeader):
             'length':        [None, 'record length',            '<I',   4],
             'ex_start':      [None, 'excld 2theta start [deg]', '<f',   8],
             'ex_end':        [None, 'excld 2theta end [deg]',   '<f',  12],
-            'ig_z':          [None, 'reserved for expansion',   '16',  16],
+            'ig_z':          [None, 'reserved for expansion',     16,  16],
             }
 
 
@@ -329,7 +329,7 @@ class BrukerSupp120(BrukerHeader):
         self._attrs = {
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
-            'ig_z':          [None, 'undefined',                '64',   8],
+            'ig_z':          [None, 'undefined',                  64,   8],
             }
 
 
@@ -346,7 +346,7 @@ class BrukerSupp110(BrukerHeader):
             'length':        [None, 'record length',            '<I',   4],
             'goni_2th':      [None, '2theta of goni[deg]',      '<f',   8],
             'chnl':          [None, 'first channel used',       '<f',  12],
-            'ig_z':          [None, 'reserved for expansion',   '16',  16],
+            'ig_z':          [None, 'reserved for expansion',     16,  16],
             }
 
 
@@ -364,7 +364,7 @@ class BrukerSupp100(BrukerHeader):
             'osc_drv':       [None, 'oscillation drive',        '<f',   8],
             'osc_amp':       [None, 'oscil amp[deg or mm]',     '<d',  16],
             'osc_spd':       [None, 'oscil spd[deg/s or mm/s]', '<f',  24],
-            'ig_z':          [None, 'reserved for expansion',   '12',  28],
+            'ig_z':          [None, 'reserved for expansion',     12,  28],
             }
 
 
@@ -394,8 +394,9 @@ class BrukerData(object):
                 self.y = []
                 self.get_smap()
             else:
-                raise Exception("not file from area detector, this is "
-                                "currently not supported. Sorry")
+                self.smap = None
+                #raise Exception("not file from area detector, this is "
+                #                "currently not supported. Sorry")
         else:
             self.header = None
             self.x = []
@@ -424,7 +425,7 @@ class BrukerData(object):
         rng.counts_data = []
         if rng.metta['sup_len'] > 0:
             (typ, ) = struct.unpack('<I', self.filecontent[pos: pos+4])
-            print(pos, 'typ', typ)
+            ##print(pos, 'typ', typ)
             # use proper suppclass
             rng.supmetta = self.get_metta(globals()["BrukerSupp"+ str(typ)](), pos)
         else:
@@ -435,7 +436,7 @@ class BrukerData(object):
         for i in range(data_len):
             (ret,) = struct.unpack('<f', self.filecontent[pos+i*4: pos+i*4+4])
             rng.counts_data.append(ret)
-        print(pos, 'ret', ret)
+        ##print(pos, 'ret', ret)
         pos += data_len * 4
         return rng, pos
 
@@ -529,11 +530,11 @@ class BrukerData(object):
             elif typ == '<d' or typ == '<Q' or typ == '<q':
                 bits = 8
             elif typ == '??':
-                bits = mettaclass['length'] - pos
+                bits = int(mettaclass['length'] - pos)
                 typ = bits
 
             mettaclass[key] = self._unpack(self.filecontent, pos, typ, bits)
-            print(pos - 712, key, mettaclass[key])
+            ##print(pos - 712, key, mettaclass[key])
         return mettaclass
 
     def __add__(self, other):
@@ -562,5 +563,6 @@ if __name__ == '__main__':
             print(test.label(key), test.pos(key), test.typ(key))
     if True:
         print("test")
-        data = BrukerData('/mnt/W/Austin_Fox/XRD/5582_map.raw')
+        #data = BrukerData('/mnt/W/Austin_Fox/XRD/5582_map.raw')
+        data = BrukerData('/mnt/W/Austin_Fox/XRD/5582.raw')
         print(data)
