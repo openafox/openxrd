@@ -32,8 +32,7 @@ class BrukerHeader(object):
         # ordering index:
 
         self._attrs = {
-            'version':       [None, 'Version',                     4,   0],
-            'head_1':        [None, 'head 1',                      4,   4],
+            'version':       [None, 'Version',                     8,   0],
             'file_status':   [None, 'File Status',              '<I',   8],
             'range_cnt':     [None, 'Range Count',              '<I',  12],
             'm_date':        [None, 'Measure Date',               10,  16],
@@ -424,6 +423,7 @@ class BrukerData(object):
         pos += rng.metta['header_len']
         rng.counts_data = []
         (typ, ) = struct.unpack('<I', self.filecontent[pos: pos+4])
+        print('typ', pos, typ)
         # use proper suppclass
         rng.supmetta = self.get_metta(globals()["BrukerSupp"+ str(typ)](), pos)
         pos += rng.metta['sup_len']
@@ -431,6 +431,7 @@ class BrukerData(object):
         for i in range(data_len):
             (ret,) = struct.unpack('<f', self.filecontent[pos+i*4: pos+i*4+4])
             rng.counts_data.append(ret)
+        print('ret',pos,  ret)
         pos += data_len * 4
         return rng, pos
 
@@ -501,28 +502,34 @@ class BrukerData(object):
             raise Exception('axis must be specified either "x" or "y".')
         return line
 
+    def _unpack(self, filecontent, pos, typ, bits):
+        if isinstance(typ, int):
+            typ = str(typ) + 's'
+        (out,) = struct.unpack(typ, filecontent[pos: pos + bits])
+        if isinstance(out, (str, bytes)):
+            out = out.strip(b'\x00').strip()
+        return out
+
     def get_metta(self, mettaclass, start_pos):
 
         for key in mettaclass:
             pos = mettaclass.pos(key)+start_pos
             typ = mettaclass.typ(key)
             bits = 0
-            if typ == '<h' or typ == '<H':
+            if isinstance(typ, int):
+                bits = typ
+            elif typ == '<h' or typ == '<H':
                 bits = 2
             elif typ == '<f' or typ == '<I':
                 bits = 4
             elif typ == '<d' or typ == '<Q' or typ == '<q':
                 bits = 8
             elif typ == '??':
-                (mettaclass[key],) = struct.unpack('%ds' % typ,
-                            self.filecontent[pos: mettaclass['length']])
-                continue
-            elif isinstance(typ, int):
-                (mettaclass[key],) = struct.unpack('%ds' % typ,
-                            self.filecontent[pos: pos+typ])
-                continue
-            (mettaclass[key],) = struct.unpack(typ,
-                            self.filecontent[pos: pos+bits])
+                bits = mettaclass['length'] - pos
+                typ = bits
+
+            mettaclass[key] = self._unpack(self.filecontent, pos, typ, bits)
+            print(key, pos, mettaclass[key])
         return mettaclass
 
     def __add__(self, other):
@@ -544,6 +551,12 @@ class BrukerData(object):
 
 
 if __name__ == '__main__':
-    test = BrukerHeader()
-    for key in test:
-        print(test.label(key), test.pos(key), test.typ(key))
+    print("test")
+    if False:
+        test = BrukerHeader()
+        for key in test:
+            print(test.label(key), test.pos(key), test.typ(key))
+    if True:
+        print("test")
+        data = BrukerData('/mnt/W/Austin_Fox/XRD/5582_map.raw')
+        print(data)
