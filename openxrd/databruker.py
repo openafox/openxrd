@@ -472,9 +472,13 @@ class BrukerData(object):
         self.smap = np.asarray(out)
         # print(self.x.shape, self.y.shape, self.smap.shape)
 
-    def get_real_xy(self, x, y):
-        y_out = self.y[int(y)]
-        x_out = self.x[int(x)]
+    def get_real_xy(self, x=None, y=None):
+        y_out = None
+        x_out = None
+        if y:
+            y_out = self.y[int(y)]
+        if x:
+            x_out = self.x[int(x)]
         return x_out, y_out
 
     def get_index_xy(self, x, y):
