@@ -395,6 +395,15 @@ class BrukerData(object):
                 self.get_smap()
             else:
                 self.smap = None
+
+                # need to generalize this as func then add to get smap below
+                #assuming all rngs are of same len
+                self.y = self.rngs[0].counts_data
+                twoth_0 = self.rngs[0].metta['start_2th']
+                twoth_s = self.rngs[0].metta['step_size']
+                twoth_e = twoth_0 + twoth_s*self.rngs[0].metta['steps']
+                twoth_len = len(self.y)
+                self.x = np.linspace(twoth_0, twoth_e, twoth_len)
                 #raise Exception("not file from area detector, this is "
                 #                "currently not supported. Sorry")
         else:
