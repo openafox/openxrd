@@ -345,8 +345,8 @@ class BrukerSupp110(BrukerHeader):
             'type':          [None, 'Record type',              '<I',   0],
             'length':        [None, 'record length',            '<I',   4],
             'goni_2th':      [None, '2theta of goni[deg]',      '<f',   8],
-            'chnl':          [None, 'first channel used',       '<f',  12],
-            'ig_z':          [None, 'reserved for expansion',     16,  16],
+            'chnl':          [None, 'first channel used',       '<I',  16],
+            'ig_z':          [None, 'reserved for expansion',     20,  20],
             }
 
 
@@ -388,7 +388,12 @@ class BrukerData(object):
             pos = 712
             for i in range(self.header['range_cnt']):
                 rng, pos = self.get_range(pos)
-                self.add_range(rng)
+                if rng.metta['steps'] > 0:
+                    self.add_range(rng)
+                else:
+                    self.header['range_cnt'] -= 1
+                    print('ERROR (Databruker)!! - Missing range %d' % i)
+
             if self.rngs[0].supmetta['type'] == 200:  # Area map
                 self.x = []
                 self.y = []
@@ -482,13 +487,14 @@ class BrukerData(object):
         # print(self.x.shape, self.y.shape, self.smap.shape)
 
     def get_real_xy(self, x=None, y=None):
-        y_out = None
-        x_out = None
-        if y:
-            y_out = self.y[int(y)]
-        if x:
-            x_out = self.x[int(x)]
-        return x_out, y_out
+        out = [None, None]
+        for i, z in enumerate(['x', 'y']):
+            if isinstance(locals()[z], list):
+                out[i] = [getattr(self, z)[int(i)] for i in locals()[z]]
+            elif isinstance(locals()[z], (int, float)):
+                out[i] = getattr(self, z)[int(locals()[z])]
+
+        return out
 
     def get_index_xy(self, x, y):
         """Assumes x and y are ordered arrays with len > 0"""
