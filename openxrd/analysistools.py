@@ -25,26 +25,8 @@ import scipy.ndimage.filters as filters
 from scipy.signal import argrelextrema
 
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 
 import inspect
-
-
-def get_datafiles(supported_datafiles, location):
-    """Qt file dialogue widget
-    """
-    types = ' '.join([row[0] for row in supported_datafiles])
-    filetypes = 'Supported (' + types + ')'
-    app = QApplication(sys.argv)
-    widget = QWidget()
-    files, _ = QFileDialog.getOpenFileNames(
-                        widget,
-                        'Program to run',
-                        location,
-                        filetypes + ';;All files (*.*)',
-                        None,
-                        QFileDialog.DontUseNativeDialog)
-    return files
 
 
 def find_peaks_2d(data, neigh_multi=0.01, neigh_add=5):
@@ -68,7 +50,7 @@ def find_peaks_2d(data, neigh_multi=0.01, neigh_add=5):
 def find_peaks_1d(data, neigh_multi=0.01, neigh_add=5):
     neighbors = int(data.size * neigh_multi) + neigh_add
     # print('neigh', neighbors)
-    (x,) = argrelextrema(data, np.greater_equal, order=neighbors)
+    (x,) = argrelextrema(data, np.greater_equal, order=neighbors, mode='clip')
     return x.tolist()
 
 def find_saddle_1d(data, neigh_multi=0.01, neigh_add=5):
@@ -78,10 +60,10 @@ def find_saddle_1d(data, neigh_multi=0.01, neigh_add=5):
     return x.tolist()
 
 
-def fit_single(x, y, plot=False, model=PseudoVoigtModel):
+def fit_single(x, y, plot=False, model=PseudoVoigtModel, prefix=''):
 
     # run model
-    mod = model(prefix='mod_0_')
+    mod = model(prefix=prefix)
     pars = mod.guess(y, x=x)
     out = mod.fit(y, pars, x=x)
 
@@ -93,7 +75,7 @@ def fit_single(x, y, plot=False, model=PseudoVoigtModel):
     #    plt.show()
 
     if plot:
-        args = {key: out.best_values['mod_0_'+key] for key in
+        args = {key: out.best_values[prefix + key] for key in
                 inspect.getargspec(mod.func)[0] if key is not 'x'}
         plt.plot(x, model().func(x, **args), 'g--')
         plt.plot(x, y, 'b')
